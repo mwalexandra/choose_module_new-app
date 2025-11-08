@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../firebase/firebase_services.dart';
+import '../constants/app_styles.dart';
+import '../constants/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -74,19 +76,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 final name = student['name'] ?? '';
                 final surname = student['surname'] ?? '';
 
-                return ListTile(
-                  title: Text('$name $surname'),
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/home',
-                      arguments: {
-                        'studentId': key,
-                        'studentData': student,
-                        'allModules': allModules,
-                      },
-                    );
-                  },
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ListTile(
+                    title: Text('$name $surname', style: AppTextStyles.body()),
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/home',
+                        arguments: {
+                          'studentId': key,
+                          'studentData': student,
+                          'allModules': allModules,
+                        },
+                      );
+                    },
+                  ),
                 );
               },
             ),

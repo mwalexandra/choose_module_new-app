@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../firebase/firebase_services.dart';
+import '../constants/app_styles.dart';
+import '../constants/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   final String studentId;
@@ -19,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Map<String, List<String>> selectedModules;
+  static const int maxModulesPerSemester = 2;
 
   @override
   void initState() {
@@ -75,7 +78,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.studentData['name']} ${widget.studentData['surname']}'),
+        title: Text(
+            '${widget.studentData['name']} ${widget.studentData['surname']}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -100,25 +104,32 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(semester,
-                    style:
-                        const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    style: AppTextStyles.subheading()),
                 ...modules.map((m) {
                   final moduleName = m['name'] ?? '';
                   final isSelected =
                       selectedModules[semester]?.contains(moduleName) ?? false;
 
                   return CheckboxListTile(
-                    title: Text('$moduleName (${m['dozent'] ?? ''})'),
+                    title: Text('$moduleName (${m['dozent'] ?? ''})',
+                        style: AppTextStyles.body()),
                     value: isSelected,
                     onChanged: (val) {
                       setState(() {
+                        final selectedList = selectedModules[semester] ??= [];
                         if (val == true) {
-                          selectedModules[semester] ??= [];
-                          if (!selectedModules[semester]!.contains(moduleName)) {
-                            selectedModules[semester]!.add(moduleName);
+                          if (selectedList.length >= maxModulesPerSemester) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(
+                                  'Вы можете выбрать не более $maxModulesPerSemester модулей для $semester'),
+                            ));
+                          } else {
+                            if (!selectedList.contains(moduleName)) {
+                              selectedList.add(moduleName);
+                            }
                           }
                         } else {
-                          selectedModules[semester]?.remove(moduleName);
+                          selectedList.remove(moduleName);
                         }
                       });
                     },
