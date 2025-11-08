@@ -62,6 +62,14 @@ class FirebaseServices {
     }
   }
 
+  /// Пример: созранить выбранные модули студента
+  static Future<void> saveSelectedModules(
+    String studentId, Map<String, List<String>> selectedModules) async {
+    await databaseReference
+        .child('students/$studentId/selectedModules')
+        .set(selectedModules);
+  }
+
   /// Пример: удалить студента
   static Future<void> deleteStudent(String studentId) async {
     try {
