@@ -103,66 +103,79 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Backstage DHGE')),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+  return Scaffold(
+    backgroundColor: AppColors.backgroundMain(context), // добавлено
+    appBar: AppBar(
+      title: Text('Backstage DHGE', style: AppTextStyles.subheading(context)),
+    ),
+    body: isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
                     Text(
                       'Login',
                       style: AppTextStyles.heading(context).copyWith(fontSize: 28),
                     ),
                     const SizedBox(height: 32),
-                    TextFormField(
-                      controller: _studentIdController,
-                      decoration: InputDecoration(
-                        labelText: 'Student ID',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                      ),
-                      style: AppTextStyles.body(context).copyWith(fontSize: 18),
-                      validator: (value) =>
-                          value == null || value.isEmpty ? 'Bitte geben Sie die Student ID ein' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                      ),
-                      style: AppTextStyles.body(context).copyWith(fontSize: 18),
-                      obscureText: true,
-                      validator: (value) =>
-                          value == null || value.isEmpty ? 'Bitte geben Sie das Passwort ein' : null,
-                    ),
-                    const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: isLoggingIn ? null : _login,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
+                      TextFormField(
+                        controller: _studentIdController,
+                        decoration: InputDecoration(
+                          labelText: 'Studenten-ID',
+                          labelStyle: AppTextStyles.body(context),
+                          border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16, horizontal: 12),
+                          filled: true,
+                          fillColor: AppColors.backgroundSubtle(context), // фон поля
                         ),
-                        child: isLoggingIn
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : Text('Login', style: AppTextStyles.body(context).copyWith(fontSize: 18)),
+                        style: AppTextStyles.body(context),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          labelText: 'Passwort',
+                          labelStyle: AppTextStyles.body(context),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16, horizontal: 12),
+                          filled: true,
+                          fillColor: AppColors.backgroundSubtle(context),
+                        ),
+                        style: AppTextStyles.body(context),
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary, // фон кнопки
+                            foregroundColor: Colors.white,      // цвет текста
+                            textStyle: AppTextStyles.button(context),  // шрифт, размер, жирность
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Login'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
-    );
+          ),
+  );
   }
 }

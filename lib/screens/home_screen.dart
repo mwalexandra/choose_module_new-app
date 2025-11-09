@@ -66,6 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final courseKey = widget.student['kurs'] ?? '';
     final courseData = widget.allModules[courseKey];
     final courseModulesRaw = courseData?['semesters'];
@@ -94,43 +97,48 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundMain(context),
       appBar: AppBar(
-        title: Text('${widget.student['name']} ${widget.student['surname']}'),
+        backgroundColor: AppColors.primary,
+        title: Text(
+          '${widget.student['name']} ${widget.student['surname']}',
+          style: TextStyle(color: AppColors.textPrimary(context)),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Schülerinformationen
+            // --- Student Info ---
             Card(
+              color: AppColors.card(context),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
-              elevation: 4,
+              elevation: 3,
               margin: const EdgeInsets.only(bottom: 16),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Schülerinformationen',
-                      style: AppTextStyles.subheading(context).copyWith(fontSize: 20),
-                    ),
+                    Text('Schülerinformationen',
+                        style: AppTextStyles.subheading(context)),
                     const SizedBox(height: 8),
                     Text('Vorname: ${widget.student['name'] ?? ''}',
-                        style: AppTextStyles.body(context).copyWith(fontSize: 16)),
+                        style: AppTextStyles.body(context)),
                     Text('Nachname: ${widget.student['surname'] ?? ''}',
-                        style: AppTextStyles.body(context).copyWith(fontSize: 16)),
+                        style: AppTextStyles.body(context)),
                     Text('Kurs: ${widget.student['kurs'] ?? ''}',
-                        style: AppTextStyles.body(context).copyWith(fontSize: 16)),
+                        style: AppTextStyles.body(context)),
                   ],
                 ),
               ),
             ),
 
-            // Speichern-Button
+            // --- Save Button ---
             Card(
+              color: AppColors.card(context),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
               elevation: 2,
@@ -145,34 +153,35 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? AppColors.secondary
                           : AppColors.secondary.withOpacity(0.5),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      textStyle:
-                          AppTextStyles.button(context).copyWith(fontSize: 18),
                     ),
                     onPressed: isModified
                         ? () async {
                             await FirebaseServices.saveSelectedModules(
                                 widget.student['id'], selectedModules);
                             if (!mounted) return;
-                            // Обновляем начальное состояние
                             initialModules = selectedModules.map(
                                 (key, value) => MapEntry(key, List<String>.from(value)));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Auswahl gespeichert!')));
-                            setState(() {}); // обновляем кнопку
+                              ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Auswahl gespeichert!')),
+                            );
+                            setState(() {});
                           }
                         : null,
-                    child: const Text('Speichern'),
+                    child: const Text(
+                      'Speichern',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ),
             ),
 
-            // Akkordeon für jedes Semester mit Wahlterminen
+            // --- Semester Sections ---
             ...courseModules.entries.map((e) {
               final semester = e.key;
               final modules = e.value;
 
-              // Termine für Wahlmodule
               String openDate = 'nicht angegeben';
               String closeDate = 'nicht angegeben';
               if (courseModulesRaw != null &&
@@ -185,33 +194,44 @@ class _HomeScreenState extends State<HomeScreen> {
               }
 
               return Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                color: AppColors.card(context),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
                 elevation: 2,
                 margin: const EdgeInsets.only(bottom: 12),
                 child: Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  data: theme.copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
                     title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          semester,
-                          style: AppTextStyles.subheading(context).copyWith(fontSize: 18),
+                          semester.toUpperCase(),
+                          style: AppTextStyles.subheading(context),
                         ),
                         const SizedBox(height: 4),
-                        Text('Wahltermine: von $openDate bis $closeDate',
-                            style: AppTextStyles.body(context).copyWith(fontSize: 14)),
+                        Text(
+                          'Wahltermine: von $openDate bis $closeDate',
+                          style: AppTextStyles.body(context)
+                              .copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
                       ],
                     ),
                     children: modules.map((m) {
                       final moduleName = m['name'] ?? '';
                       final moduleDozent = m['dozent'] ?? '';
-                      final isSelected = selectedModules[semester]?.contains(moduleName) ?? false;
+                      final isSelected =
+                          selectedModules[semester]?.contains(moduleName) ?? false;
 
                       return CheckboxListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        title: Text('$moduleName ($moduleDozent)',
-                            style: AppTextStyles.body(context).copyWith(fontSize: 16)),
+                        activeColor: colorScheme.primary,
+                        checkColor: colorScheme.onPrimary,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        title: Text(
+                          '$moduleName ($moduleDozent)',
+                          style: AppTextStyles.body(context),
+                        ),
                         value: isSelected,
                         onChanged: (val) {
                           setState(() {
@@ -247,7 +267,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Для сравнения списков
 class ListEquality {
   bool equals(List a, List b) {
     if (a.length != b.length) return false;

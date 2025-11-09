@@ -6,7 +6,7 @@ class AppTextStyles {
   static TextStyle heading(BuildContext context) => TextStyle(
         fontFamily: 'Roboto',
         fontSize: 24,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.normal,
         color: AppColors.textPrimary(context),
       );
 
@@ -14,7 +14,7 @@ class AppTextStyles {
   static TextStyle subheading(BuildContext context) => TextStyle(
         fontFamily: 'Roboto Condensed',
         fontSize: 20,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.normal,
         color: AppColors.textPrimary(context),
       );
 
@@ -30,7 +30,7 @@ class AppTextStyles {
   static TextStyle button(BuildContext context) => TextStyle(
         fontFamily: 'Roboto Condensed',
         fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
+        fontWeight: FontWeight.normal,
+        color: AppColors.textPrimaryOpposite(context),
       );
 }

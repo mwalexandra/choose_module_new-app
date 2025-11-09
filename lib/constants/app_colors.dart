@@ -7,6 +7,7 @@ class AppColors {
   static const success = Color.fromRGBO(5, 92, 43, 0.941);
   static const error = Color.fromRGBO(196, 31, 13, 1);
   static const warning = Color.fromRGBO(173, 27, 11, 1);
+  static const white = Color.fromRGBO(255, 255, 255, 1);
 
   // Светлая тема
   static const _lightBackgroundMain = Color.fromRGBO(255, 255, 255, 1);
@@ -46,6 +47,11 @@ class AppColors {
       Theme.of(context).brightness == Brightness.dark
           ? _darkTextPrimary
           : _lightTextPrimary;
+
+  static Color textPrimaryOpposite(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? _lightTextPrimary
+          : _darkTextPrimary;
 
   static Color textSecondary(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
