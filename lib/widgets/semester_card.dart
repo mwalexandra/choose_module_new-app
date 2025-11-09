@@ -30,7 +30,7 @@ class _SemesterCardState extends State<SemesterCard>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late final AnimationController _arrowController;
-  late final bool _isExpired;
+  late final bool _isSelectionActive;
 
   @override
   void initState() {
@@ -42,12 +42,18 @@ class _SemesterCardState extends State<SemesterCard>
       upperBound: 0.5,
     );
 
-    // --- Проверка срока ---
+    _isSelectionActive = _checkSelectionActive();
+  }
+
+  bool _checkSelectionActive() {
     try {
+      final now = DateTime.now();
+      final open = DateTime.parse(widget.openDate);
       final close = DateTime.parse(widget.closeDate);
-      _isExpired = DateTime.now().isAfter(close);
+      return now.isAfter(open.subtract(const Duration(days: 1))) &&
+          now.isBefore(close.add(const Duration(days: 1)));
     } catch (_) {
-      _isExpired = false; // если формат даты неверный
+      return true; // если формат даты некорректный, выбор разрешаем
     }
   }
 
@@ -106,11 +112,11 @@ class _SemesterCardState extends State<SemesterCard>
                           style: AppTextStyles.body(context)
                               .copyWith(color: Colors.white70),
                         ),
-                        if (_isExpired)
+                        if (!_isSelectionActive)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
-                              'Auswahl geschlossen',
+                              'Auswahl nicht möglich',
                               style: AppTextStyles.body(context)
                                   .copyWith(color: Colors.redAccent),
                             ),
@@ -152,10 +158,10 @@ class _SemesterCardState extends State<SemesterCard>
                       style: AppTextStyles.body(context),
                     ),
                     value: isSelected,
-                    onChanged: _isExpired
-                        ? null // выбор отключён, если срок истёк
-                        : (val) =>
-                            widget.onModuleChanged(moduleName, val ?? false),
+                    onChanged: _isSelectionActive
+                        ? (val) =>
+                            widget.onModuleChanged(moduleName, val ?? false)
+                        : null, // блокировка выбора
                   );
                 }).toList(),
               ),
