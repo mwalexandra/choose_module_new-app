@@ -22,7 +22,7 @@ class ChooseModuleApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Choose Module App',
+      title: 'Backstage DHGE - Choose Module App',
       theme: ThemeData(
         brightness: Brightness.light,
         primaryColor: AppColors.primary,

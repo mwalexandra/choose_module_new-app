@@ -57,7 +57,7 @@ class _SemesterCardState extends State<SemesterCard>
       margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         children: [
-          // --- Header (шапка карты) ---
+          // --- Header ---
           InkWell(
             onTap: () {
               setState(() {
