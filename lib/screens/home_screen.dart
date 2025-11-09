@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.student['name']} ${widget.student['surname']}'),
+        title: Text('Backstage DHGE'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -91,56 +91,87 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: courseModules.entries.map((e) {
-            final semester = e.key;
-            final modules = e.value;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  semester,
-                  style: AppTextStyles.subheading().copyWith(fontSize: 20),
-                ),
-                const SizedBox(height: 8),
-                ...modules.map((m) {
-                  final moduleName = m['name'] ?? '';
-                  final moduleDozent = m['dozent'] ?? '';
-                  final isSelected =
-                      selectedModules[semester]?.contains(moduleName) ?? false;
-
-                  return CheckboxListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-                    title: Text('$moduleName ($moduleDozent)',
+          children: [
+            // Student Information Section
+            Card(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              elevation: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Information über den Studenten',
+                      style: AppTextStyles.subheading().copyWith(fontSize: 20),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Vorname: ${widget.student['name'] ?? ''}',
                         style: AppTextStyles.body().copyWith(fontSize: 16)),
-                    value: isSelected,
-                    onChanged: (val) {
-                      setState(() {
-                        final selectedList = selectedModules[semester] ??= [];
-                        if (val == true) {
-                          if (selectedList.length >= maxModulesPerSemester) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Вы можете выбрать не более $maxModulesPerSemester модулей для $semester'),
-                              ),
-                            );
-                          } else {
-                            if (!selectedList.contains(moduleName)) {
-                              selectedList.add(moduleName);
+                    Text('Nachname: ${widget.student['surname'] ?? ''}',
+                        style: AppTextStyles.body().copyWith(fontSize: 16)),
+                    Text('Kurs: ${widget.student['kurs'] ?? ''}',
+                        style: AppTextStyles.body().copyWith(fontSize: 16)),
+                  ],
+                ),
+              ),
+            ),
+
+            // Module Selection Section
+            ...courseModules.entries.map((e) {
+              final semester = e.key;
+              final modules = e.value;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    semester,
+                    style: AppTextStyles.subheading().copyWith(fontSize: 20),
+                  ),
+                  const SizedBox(height: 8),
+                  ...modules.map((m) {
+                    final moduleName = m['name'] ?? '';
+                    final moduleDozent = m['dozent'] ?? '';
+                    final isSelected =
+                        selectedModules[semester]?.contains(moduleName) ?? false;
+
+                    return CheckboxListTile(
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+                      title: Text('$moduleName ($moduleDozent)',
+                          style: AppTextStyles.body().copyWith(fontSize: 16)),
+                      value: isSelected,
+                      onChanged: (val) {
+                        setState(() {
+                          final selectedList = selectedModules[semester] ??= [];
+                          if (val == true) {
+                            if (selectedList.length >= maxModulesPerSemester) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Sie können nicht mehr als $maxModulesPerSemester Module für $semester auswählen'),
+                                ),
+                              );
+                            } else {
+                              if (!selectedList.contains(moduleName)) {
+                                selectedList.add(moduleName);
+                              }
                             }
+                          } else {
+                            selectedList.remove(moduleName);
                           }
-                        } else {
-                          selectedList.remove(moduleName);
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
-                const SizedBox(height: 16),
-              ],
-            );
-          }).toList(),
+                        });
+                      },
+                    );
+                  }).toList(),
+                  const SizedBox(height: 16),
+                ],
+              );
+            }).toList(),
+          ],
         ),
       ),
     );

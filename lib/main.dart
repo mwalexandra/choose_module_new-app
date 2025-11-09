@@ -22,7 +22,7 @@ class ChooseModuleApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Choose Module App',
+      title: 'Backstage DHGE',
       theme: ThemeData(
         primaryColor: AppColors.primary,
         scaffoldBackgroundColor: AppColors.backgroundMain,
@@ -34,7 +34,7 @@ class ChooseModuleApp extends StatelessWidget {
           backgroundColor: AppColors.secondary,
         ),
       ),
-      home: const LoginScreen(), // стартовая страница
+      home: const LoginScreen(), // Start with the LoginScreen 
     );
   }
 }

@@ -67,12 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final student = students[studentId];
     if (student == null) {
-      _showError('Студент не найден');
+      _showError('Student ID ist nicht gefunden');
       return;
     }
 
     if (student['password'] != password) {
-      _showError('Неверный пароль');
+      _showError('Passwort ist falsch');
       return;
     }
 
@@ -89,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (e) {
-      _showError('Ошибка при входе');
+      _showError('Fehler beim Einloggen');
     } finally {
       if (mounted) setState(() => isLoggingIn = false);
     }
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('Backstage DHGE')),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Choose Module App',
+                      'Login',
                       style: AppTextStyles.heading().copyWith(fontSize: 28),
                     ),
                     const SizedBox(height: 32),
@@ -128,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       style: AppTextStyles.body().copyWith(fontSize: 18),
                       validator: (value) =>
-                          value == null || value.isEmpty ? 'Введите Student ID' : null,
+                          value == null || value.isEmpty ? 'Bitte geben Sie die Student ID ein' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -141,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: AppTextStyles.body().copyWith(fontSize: 18),
                       obscureText: true,
                       validator: (value) =>
-                          value == null || value.isEmpty ? 'Введите пароль' : null,
+                          value == null || value.isEmpty ? 'Bitte geben Sie das Passwort ein' : null,
                     ),
                     const SizedBox(height: 32),
                     SizedBox(
