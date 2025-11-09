@@ -4,8 +4,8 @@ import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import '../constants/app_styles.dart';
-import '../constants/app_colors.dart';
+import 'constants/app_styles.dart';
+import 'constants/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +21,7 @@ class ChooseModuleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // убираем DEBUG
+      debugShowCheckedModeBanner: false,
       title: 'Choose Module App',
       theme: ThemeData(
         primaryColor: AppColors.primary,
@@ -34,19 +34,7 @@ class ChooseModuleApp extends StatelessWidget {
           backgroundColor: AppColors.secondary,
         ),
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const LoginScreen(),
-        '/home': (context) {
-          final args =
-              ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return HomeScreen(
-            studentId: args['studentId'],
-            studentData: args['studentData'],
-            allModules: args['allModules'],
-          );
-        },
-      },
+      home: const LoginScreen(), // стартовая страница
     );
   }
 }

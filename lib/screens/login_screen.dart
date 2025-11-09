@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../firebase/firebase_services.dart';
 import '../constants/app_styles.dart';
 import '../constants/app_colors.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,33 +12,31 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _studentIdController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
   Map<String, dynamic> students = {};
   Map<String, dynamic> allModules = {};
-  bool isLoadingStudents = true;
-  bool isLoadingModules = true;
+  bool isLoading = true;
+  bool isLoggingIn = false;
 
   @override
   void initState() {
     super.initState();
-    fetchStudents();
-    fetchModules();
+    fetchData();
   }
 
-  void fetchStudents() async {
-    final data = await FirebaseServices.getStudents();
-    if (!mounted) return;
-    setState(() {
-      students = deepConvertMap(Map<Object?, Object?>.from(data));
-      isLoadingStudents = false;
-    });
-  }
+  void fetchData() async {
+    final studentData = await FirebaseServices.getStudents();
+    final modulesData = await FirebaseServices.getModules();
 
-  void fetchModules() async {
-    final data = await FirebaseServices.getModules();
     if (!mounted) return;
+
     setState(() {
-      allModules = deepConvertMap(Map<Object?, Object?>.from(data));
-      isLoadingModules = false;
+      students = deepConvertMap(Map<Object?, Object?>.from(studentData));
+      allModules = deepConvertMap(Map<Object?, Object?>.from(modulesData));
+      isLoading = false;
     });
   }
 
@@ -60,40 +59,109 @@ class _LoginScreenState extends State<LoginScreen> {
     return result;
   }
 
+  void _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final studentId = _studentIdController.text.trim();
+    final password = _passwordController.text;
+
+    final student = students[studentId];
+    if (student == null) {
+      _showError('Студент не найден');
+      return;
+    }
+
+    if (student['password'] != password) {
+      _showError('Неверный пароль');
+      return;
+    }
+
+    setState(() => isLoggingIn = true);
+
+    try {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomeScreen(
+            student: {'id': studentId, ...student},
+            allModules: allModules,
+          ),
+        ),
+      );
+    } catch (e) {
+      _showError('Ошибка при входе');
+    } finally {
+      if (mounted) setState(() => isLoggingIn = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isLoading = isLoadingStudents || isLoadingModules;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: students.length,
-              itemBuilder: (context, index) {
-                final key = students.keys.elementAt(index);
-                final student = students[key] ?? {};
-                final name = student['name'] ?? '';
-                final surname = student['surname'] ?? '';
-
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: ListTile(
-                    title: Text('$name $surname', style: AppTextStyles.body()),
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/home',
-                        arguments: {
-                          'studentId': key,
-                          'studentData': student,
-                          'allModules': allModules,
-                        },
-                      );
-                    },
-                  ),
-                );
-              },
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Choose Module App',
+                      style: AppTextStyles.heading().copyWith(fontSize: 28),
+                    ),
+                    const SizedBox(height: 32),
+                    TextFormField(
+                      controller: _studentIdController,
+                      decoration: InputDecoration(
+                        labelText: 'Student ID',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                      ),
+                      style: AppTextStyles.body().copyWith(fontSize: 18),
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Введите Student ID' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                      ),
+                      style: AppTextStyles.body().copyWith(fontSize: 18),
+                      obscureText: true,
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Введите пароль' : null,
+                    ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: isLoggingIn ? null : _login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: isLoggingIn
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : Text('Login', style: AppTextStyles.body().copyWith(fontSize: 18)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
     );
   }

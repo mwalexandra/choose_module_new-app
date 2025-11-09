@@ -4,14 +4,12 @@ import '../constants/app_styles.dart';
 import '../constants/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
-  final String studentId;
-  final Map<String, dynamic> studentData;
+  final Map<String, dynamic> student;
   final Map<String, dynamic> allModules;
 
   const HomeScreen({
     super.key,
-    required this.studentId,
-    required this.studentData,
+    required this.student,
     required this.allModules,
   });
 
@@ -26,9 +24,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Копируем выбранные модули студента
     selectedModules = {};
-    final raw = widget.studentData['selectedModules'];
+    final raw = widget.student['selectedModules'];
     if (raw != null && raw is Map) {
       raw.forEach((key, value) {
         if (value is List) {
@@ -38,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       });
     } else {
-      // Если нет selectedModules, создаём пустые семестры
       selectedModules = {
         'wpm1': [],
         'wpm2': [],
@@ -49,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final courseKey = widget.studentData['kurs'] ?? '';
+    final courseKey = widget.student['kurs'] ?? '';
     final courseModulesRaw = widget.allModules[courseKey]?['semesters'];
     Map<String, List<Map<String, dynamic>>> courseModules = {};
 
@@ -68,7 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
         courseModules[semesterKey] = modulesList;
       });
     } else {
-      // Если нет данных по курсу, создаём пустую структуру
       courseModules = {
         'wpm1': [],
         'wpm2': [],
@@ -78,18 +73,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            '${widget.studentData['name']} ${widget.studentData['surname']}'),
+        title: Text('${widget.student['name']} ${widget.student['surname']}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: () async {
               await FirebaseServices.saveSelectedModules(
-                  widget.studentId, selectedModules);
+                  widget.student['id'], selectedModules);
+              if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Auswahl gespeichert!')));
             },
-          )
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -103,26 +98,33 @@ class _HomeScreenState extends State<HomeScreen> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(semester,
-                    style: AppTextStyles.subheading()),
+                Text(
+                  semester,
+                  style: AppTextStyles.subheading().copyWith(fontSize: 20),
+                ),
+                const SizedBox(height: 8),
                 ...modules.map((m) {
                   final moduleName = m['name'] ?? '';
+                  final moduleDozent = m['dozent'] ?? '';
                   final isSelected =
                       selectedModules[semester]?.contains(moduleName) ?? false;
 
                   return CheckboxListTile(
-                    title: Text('$moduleName (${m['dozent'] ?? ''})',
-                        style: AppTextStyles.body()),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 0),
+                    title: Text('$moduleName ($moduleDozent)',
+                        style: AppTextStyles.body().copyWith(fontSize: 16)),
                     value: isSelected,
                     onChanged: (val) {
                       setState(() {
                         final selectedList = selectedModules[semester] ??= [];
                         if (val == true) {
                           if (selectedList.length >= maxModulesPerSemester) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                  'Вы можете выбрать не более $maxModulesPerSemester модулей для $semester'),
-                            ));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Вы можете выбрать не более $maxModulesPerSemester модулей для $semester'),
+                              ),
+                            );
                           } else {
                             if (!selectedList.contains(moduleName)) {
                               selectedList.add(moduleName);
@@ -135,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   );
                 }).toList(),
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
               ],
             );
           }).toList(),
