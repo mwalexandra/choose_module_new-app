@@ -30,18 +30,16 @@ class _SemesterCardState extends State<SemesterCard>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late final AnimationController _arrowController;
-  late final bool _isSelectionActive;
+  late bool _isSelectionActive;
 
   @override
   void initState() {
     super.initState();
-
     _arrowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
       upperBound: 0.5,
     );
-
     _isSelectionActive = _checkSelectionActive();
   }
 
@@ -55,6 +53,31 @@ class _SemesterCardState extends State<SemesterCard>
     } catch (_) {
       return true; // если формат даты некорректный, выбор разрешаем
     }
+  }
+
+  bool _isModuleSelectable(Map<String, dynamic> module) {
+    final participants = module['participants'] ?? 0;
+    final maxParticipants = module['maxParticipants'] ?? 20;
+    return _isSelectionActive && participants < maxParticipants;
+  }
+
+  void _handleModuleChange(Map<String, dynamic> module, bool isSelected) {
+    final moduleName = module['name'] ?? '';
+    final participants = module['participants'] ?? 0;
+    final maxParticipants = module['maxParticipants'] ?? 20;
+
+    setState(() {
+      // Обновляем локальное количество участников
+      if (isSelected) {
+        if (participants < maxParticipants) {
+          module['participants'] = participants + 1;
+        }
+      } else {
+        module['participants'] = (participants > 0) ? participants - 1 : 0;
+      }
+    });
+
+    widget.onModuleChanged(moduleName, isSelected);
   }
 
   @override
@@ -90,8 +113,7 @@ class _SemesterCardState extends State<SemesterCard>
               width: double.infinity,
               decoration: BoxDecoration(
                 color: AppColors.primary,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
@@ -139,29 +161,48 @@ class _SemesterCardState extends State<SemesterCard>
               width: double.infinity,
               decoration: BoxDecoration(
                 color: AppColors.card(context),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(12)),
               ),
               child: Column(
                 children: widget.modules.map((m) {
                   final moduleName = m['name'] ?? '';
                   final moduleDozent = m['dozent'] ?? '';
+                  final participants = m['participants'] ?? 0;
+                  final maxParticipants = m['maxParticipants'] ?? 20;
                   final isSelected =
                       widget.selectedModules[widget.semester]?.contains(moduleName) ?? false;
+                  final isSelectable = _isSelectionActive && participants < maxParticipants;
 
                   return CheckboxListTile(
                     activeColor: colorScheme.primary,
                     checkColor: colorScheme.onPrimary,
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    title: Text(
-                      '$moduleName ($moduleDozent)',
-                      style: AppTextStyles.body(context),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '$moduleName ($moduleDozent)',
+                            style: AppTextStyles.body(context),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 60,
+                          child: Text(
+                            '$participants/$maxParticipants',
+                            textAlign: TextAlign.right,
+                            style: AppTextStyles.body(context).copyWith(
+                              color: isSelectable ? Colors.black54 : Colors.redAccent,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     value: isSelected,
-                    onChanged: _isSelectionActive
-                        ? (val) =>
-                            widget.onModuleChanged(moduleName, val ?? false)
-                        : null, // блокировка выбора
+                    onChanged: isSelectable
+                        ? (val) => _handleModuleChange(m, val ?? false)
+                        : null,
                   );
                 }).toList(),
               ),

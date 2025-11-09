@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../firebase/firebase_services.dart';
+import '../utils/recalculate_participants.dart';
 import '../constants/app_styles.dart';
 import '../constants/app_colors.dart';
 import '../widgets/semester_card.dart';
@@ -22,12 +23,14 @@ class _HomeScreenState extends State<HomeScreen> {
   late Map<String, List<String>> selectedModules;
   late Map<String, List<String>> initialModules;
   static const int maxModulesPerSemester = 2;
+  bool _isLoadingParticipants = true;
 
   @override
   void initState() {
     super.initState();
     selectedModules = {};
     initialModules = {};
+
     final raw = widget.student['selectedModules'];
     if (raw != null && raw is Map) {
       raw.forEach((key, value) {
@@ -43,14 +46,26 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedModules = {'wpm1': [], 'wpm2': [], 'wpm3': []};
       initialModules = {'wpm1': [], 'wpm2': [], 'wpm3': []};
     }
+
+    // Пересчёт участников при старте
+    _recalculateParticipants();
+  }
+
+  Future<void> _recalculateParticipants() async {
+    setState(() {
+      _isLoadingParticipants = true;
+    });
+    await recalcParticipants(); // функция из отдельного файла
+    setState(() {
+      _isLoadingParticipants = false;
+    });
   }
 
   bool get isModified {
     for (var key in selectedModules.keys) {
       final current = selectedModules[key] ?? [];
       final initial = initialModules[key] ?? [];
-      if (current.length != initial.length ||
-          !_listEquals(current, initial)) {
+      if (current.length != initial.length || !_listEquals(current, initial)) {
         return true;
       }
     }
@@ -65,30 +80,45 @@ class _HomeScreenState extends State<HomeScreen> {
     return true;
   }
 
-  void _onModuleChanged(String semester, String moduleName, bool isSelected) {
+  void _onModuleChanged(
+      String semester, String moduleName, bool isSelected) async {
     final current = selectedModules[semester] ?? [];
-    if (isSelected) {
-      if (current.length >= maxModulesPerSemester) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Sie können maximal $maxModulesPerSemester Module für $semester auswählen'),
-          ),
-        );
-        return;
-      }
-      current.add(moduleName);
-    } else {
-      current.remove(moduleName);
+
+    // проверка ограничения на выбор
+    if (isSelected && current.length >= maxModulesPerSemester) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Sie können maximal $maxModulesPerSemester Module für $semester auswählen'),
+        ),
+      );
+      return; // ничего не меняем
     }
+
     setState(() {
+      if (isSelected) {
+        current.add(moduleName);
+      } else {
+        current.remove(moduleName);
+      }
       selectedModules[semester] = current;
     });
 
-    FirebaseServices.saveSelectedModules(
+    // обновляем базу данных выбранных модулей студента
+    await FirebaseServices.saveSelectedModules(
       widget.student['id'],
       selectedModules,
     );
+
+    // обновляем участников только если реально добавили/удалили модуль
+    if (isSelected) {
+      await FirebaseServices.incrementParticipants(semester, moduleName);
+    } else {
+      await FirebaseServices.decrementParticipants(semester, moduleName);
+    }
+
+    // после изменения обновляем пересчёт участников для актуальных значений
+    await _recalculateParticipants();
   }
 
   @override
@@ -121,109 +151,113 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(color: AppColors.textPrimary(context)),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- Student Info ---
-            Card(
-              color: AppColors.card(context),
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 3,
-              margin: const EdgeInsets.only(bottom: 16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text('Schülerinformationen',
-                        style: AppTextStyles.subheading(context)),
-                    const SizedBox(height: 8),
-                    Text('Vorname: ${widget.student['name'] ?? ''}',
-                        style: AppTextStyles.body(context)),
-                    Text('Nachname: ${widget.student['surname'] ?? ''}',
-                        style: AppTextStyles.body(context)),
-                    Text('Kurs: ${widget.student['kurs']?.toUpperCase() ?? ''}',
-                        style: AppTextStyles.body(context)),
-                  ],
-                ),
-              ),
-            ),
-
-            // --- Save Button ---
-            Card(
-              color: AppColors.card(context),
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 2,
-              margin: const EdgeInsets.only(bottom: 16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isModified
-                          ? AppColors.secondary
-                          : AppColors.secondary.withOpacity(0.5),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    onPressed: isModified
-                        ? () async {
-                            await FirebaseServices.saveSelectedModules(
-                                widget.student['id'], selectedModules);
-                            if (!mounted) return;
-                            initialModules = selectedModules.map(
-                                (key, value) =>
-                                    MapEntry(key, List<String>.from(value)));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Auswahl gespeichert!')),
-                            );
-                            setState(() {});
-                          }
-                        : null,
-                    child: const Text(
-                      'Speichern',
-                      style: TextStyle(color: Colors.white),
+      body: _isLoadingParticipants
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- Student Info ---
+                  Card(
+                    color: AppColors.card(context),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 3,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('Schülerinformationen',
+                              style: AppTextStyles.subheading(context)),
+                          const SizedBox(height: 8),
+                          Text('Vorname: ${widget.student['name'] ?? ''}',
+                              style: AppTextStyles.body(context)),
+                          Text('Nachname: ${widget.student['surname'] ?? ''}',
+                              style: AppTextStyles.body(context)),
+                          Text(
+                              'Kurs: ${widget.student['kurs']?.toUpperCase() ?? ''}',
+                              style: AppTextStyles.body(context)),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+
+                  // --- Save Button ---
+                  Card(
+                    color: AppColors.card(context),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isModified
+                                ? AppColors.secondary
+                                : AppColors.secondary.withOpacity(0.5),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: isModified
+                              ? () async {
+                                  await FirebaseServices.saveSelectedModules(
+                                      widget.student['id'], selectedModules);
+                                  if (!mounted) return;
+                                  initialModules = selectedModules.map(
+                                      (key, value) => MapEntry(
+                                          key, List<String>.from(value)));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Auswahl gespeichert!')),
+                                  );
+                                  setState(() {});
+                                }
+                              : null,
+                          child: const Text(
+                            'Speichern',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // --- Semester Sections via SemesterCard ---
+                  ...courseModules.entries.map((entry) {
+                    final semester = entry.key;
+                    final modules = entry.value;
+
+                    String openDate = 'nicht angegeben';
+                    String closeDate = 'nicht angegeben';
+                    if (courseModulesRaw[semester] != null &&
+                        courseModulesRaw[semester] is Map) {
+                      openDate = courseModulesRaw[semester]['chooseOpenDate'] ??
+                          'nicht angegeben';
+                      closeDate = courseModulesRaw[semester]
+                              ['chooseCloseDate'] ??
+                          'nicht angegeben';
+                    }
+
+                    return SemesterCard(
+                      semester: semester,
+                      openDate: openDate,
+                      closeDate: closeDate,
+                      modules: modules,
+                      selectedModules: selectedModules,
+                      maxModulesPerSemester: maxModulesPerSemester,
+                      onModuleChanged: (moduleName, isSelected) {
+                        _onModuleChanged(semester, moduleName, isSelected);
+                      },
+                    );
+                  }).toList(),
+                ],
               ),
             ),
-
-            // --- Semester Sections via SemesterCard ---
-            ...courseModules.entries.map((entry) {
-              final semester = entry.key;
-              final modules = entry.value;
-
-              String openDate = 'nicht angegeben';
-              String closeDate = 'nicht angegeben';
-              if (courseModulesRaw[semester] != null &&
-                  courseModulesRaw[semester] is Map) {
-                openDate =
-                    courseModulesRaw[semester]['chooseOpenDate'] ?? 'nicht angegeben';
-                closeDate =
-                    courseModulesRaw[semester]['chooseCloseDate'] ??
-                        'nicht angegeben';
-              }
-
-              return SemesterCard(
-                semester: semester,
-                openDate: openDate,
-                closeDate: closeDate,
-                modules: modules,
-                selectedModules: selectedModules,
-                maxModulesPerSemester: maxModulesPerSemester,
-                onModuleChanged: (moduleName, isSelected) =>
-                    _onModuleChanged(semester, moduleName, isSelected),
-              );
-            }).toList(),
-          ],
-        ),
-      ),
     );
   }
 }
