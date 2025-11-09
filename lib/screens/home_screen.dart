@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../firebase/firebase_services.dart';
 import '../constants/app_styles.dart';
 import '../constants/app_colors.dart';
+import '../widgets/semester_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -101,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         title: Text(
-          '${widget.student['name']} ${widget.student['surname']}',
+          'Backstage DHGE',
           style: TextStyle(color: AppColors.textPrimary(context)),
         ),
       ),
@@ -129,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: AppTextStyles.body(context)),
                     Text('Nachname: ${widget.student['surname'] ?? ''}',
                         style: AppTextStyles.body(context)),
-                    Text('Kurs: ${widget.student['kurs'] ?? ''}',
+                    Text('Kurs: ${widget.student['kurs'].toUpperCase() ?? ''}',
                         style: AppTextStyles.body(context)),
                   ],
                 ),
@@ -187,77 +188,95 @@ class _HomeScreenState extends State<HomeScreen> {
               if (courseModulesRaw != null &&
                   courseModulesRaw[semester] != null &&
                   courseModulesRaw[semester] is Map) {
-                openDate =
-                    courseModulesRaw[semester]['chooseOpenDate'] ?? 'nicht angegeben';
-                closeDate =
-                    courseModulesRaw[semester]['chooseCloseDate'] ?? 'nicht angegeben';
+                openDate = courseModulesRaw[semester]['chooseOpenDate'] ?? 'nicht angegeben';
+                closeDate = courseModulesRaw[semester]['chooseCloseDate'] ?? 'nicht angegeben';
               }
 
-              return Card(
-                color: AppColors.card(context),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                elevation: 2,
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Theme(
-                  data: theme.copyWith(dividerColor: Colors.transparent),
-                  child: ExpansionTile(
-                    title: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          semester.toUpperCase(),
-                          style: AppTextStyles.subheading(context),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Wahltermine: von $openDate bis $closeDate',
-                          style: AppTextStyles.body(context)
-                              .copyWith(color: colorScheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                    children: modules.map((m) {
-                      final moduleName = m['name'] ?? '';
-                      final moduleDozent = m['dozent'] ?? '';
-                      final isSelected =
-                          selectedModules[semester]?.contains(moduleName) ?? false;
+              return StatefulBuilder(
+                builder: (context, setTileState) {
+                  bool isExpanded = false;
 
-                      return CheckboxListTile(
-                        activeColor: colorScheme.primary,
-                        checkColor: colorScheme.onPrimary,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 4),
-                        title: Text(
-                          '$moduleName ($moduleDozent)',
-                          style: AppTextStyles.body(context),
-                        ),
-                        value: isSelected,
-                        onChanged: (val) {
-                          setState(() {
-                            final selectedList = selectedModules[semester] ??= [];
-                            if (val == true) {
-                              if (selectedList.length >= maxModulesPerSemester) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                        'Sie können maximal $maxModulesPerSemester Module für $semester auswählen'),
-                                  ),
-                                );
-                              } else {
-                                if (!selectedList.contains(moduleName)) {
-                                  selectedList.add(moduleName);
-                                }
-                              }
-                            } else {
-                              selectedList.remove(moduleName);
-                            }
-                          });
+                  return Card(
+                    color: AppColors.card(context),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Theme(
+                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        collapsedBackgroundColor: Colors.transparent,
+                        backgroundColor: Colors.transparent,
+                        onExpansionChanged: (expanded) {
+                          setTileState(() => isExpanded = expanded);
                         },
-                      );
-                    }).toList(),
-                  ),
-                ),
+                        title: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: isExpanded 
+                            ? AppColors.sectionHeaderActive(context)
+                            : AppColors.sectionHeaderInactive(context),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                semester.toUpperCase(),
+                                style: AppTextStyles.subheading(context),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Wahltermine: von $openDate bis $closeDate',
+                                style: AppTextStyles.body(context).copyWith(
+                                  color: AppColors.textPrimary(context).withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        children: modules.map((m) {
+                          final moduleName = m['name'] ?? '';
+                          final moduleDozent = m['dozent'] ?? '';
+                          final isSelected =
+                              selectedModules[semester]?.contains(moduleName) ?? false;
+
+                          return CheckboxListTile(
+                            activeColor: AppColors.primary,
+                            checkColor: Colors.white,
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            title: Text(
+                              '$moduleName ($moduleDozent)',
+                              style: AppTextStyles.body(context),
+                            ),
+                            value: isSelected,
+                            onChanged: (val) {
+                              setState(() {
+                                final selectedList = selectedModules[semester] ??= [];
+                                if (val == true) {
+                                  if (selectedList.length >= maxModulesPerSemester) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            'Sie können maximal $maxModulesPerSemester Module für $semester auswählen'),
+                                      ),
+                                    );
+                                  } else if (!selectedList.contains(moduleName)) {
+                                    selectedList.add(moduleName);
+                                  }
+                                } else {
+                                  selectedList.remove(moduleName);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  );
+                },
               );
             }).toList(),
           ],
