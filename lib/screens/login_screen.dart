@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Text(
                       'Login',
-                      style: AppTextStyles.heading().copyWith(fontSize: 28),
+                      style: AppTextStyles.heading(context).copyWith(fontSize: 28),
                     ),
                     const SizedBox(height: 32),
                     TextFormField(
@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                       ),
-                      style: AppTextStyles.body().copyWith(fontSize: 18),
+                      style: AppTextStyles.body(context).copyWith(fontSize: 18),
                       validator: (value) =>
                           value == null || value.isEmpty ? 'Bitte geben Sie die Student ID ein' : null,
                     ),
@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                       ),
-                      style: AppTextStyles.body().copyWith(fontSize: 18),
+                      style: AppTextStyles.body(context).copyWith(fontSize: 18),
                       obscureText: true,
                       validator: (value) =>
                           value == null || value.isEmpty ? 'Bitte geben Sie das Passwort ein' : null,
@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: isLoggingIn
                             ? const CircularProgressIndicator(color: Colors.white)
-                            : Text('Login', style: AppTextStyles.body().copyWith(fontSize: 18)),
+                            : Text('Login', style: AppTextStyles.body(context).copyWith(fontSize: 18)),
                       ),
                     ),
                   ],

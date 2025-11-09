@@ -1,35 +1,69 @@
 import 'package:flutter/material.dart';
 
-// Colors
 class AppColors {
   // Основные цвета
-  static const primary = Color(0xFF54AB26);
-  static const secondary = Color(0xFFA11072);
-  static const success = Color(0xFF00946B);
-  static const error = Color(0xFFC41F0D);
-  static const warning = Color(0xFFAD1B0B);
+  static const primary = Color.fromRGBO(85, 171, 38, 0.8);
+  static const secondary = Color.fromRGBO(161, 16, 114, 1);
+  static const success = Color.fromRGBO(5, 92, 43, 0.941);
+  static const error = Color.fromRGBO(196, 31, 13, 1);
+  static const warning = Color.fromRGBO(173, 27, 11, 1);
 
   // Светлая тема
-  static const backgroundMain = Color(0xFFFFFFFF);
-  static const backgroundSubtle = Color(0xFFF6F6F6);
-  static const card = Color(0xFFFFFFFF);
-
-  static const textPrimary = Color(0xFF000000);
-  static const textSecondary = Color(0xFF727272);
-  static const textDisabled = Color(0xFFB8B8B8);
-
-  static const borderLight = Color(0xFFE0E0DF);
-  static const borderStrong = Color(0xFF184637);
+  static const _lightBackgroundMain = Color.fromRGBO(255, 255, 255, 1);
+  static const _lightBackgroundSubtle = Color.fromRGBO(246, 246, 246, 1);
+  static const _lightCard = Color.fromRGBO(255, 255, 255, 1);
+  static const _lightTextPrimary = Color.fromRGBO(0, 0, 0, 1);
+  static const _lightTextSecondary = Color.fromRGBO(114, 114, 114, 1);
+  static const _lightTextDisabled = Color.fromRGBO(184, 184, 184, 1);
+  static const _lightBorderLight = Color.fromRGBO(224, 224, 223, 1);
+  static const _lightBorderStrong = Color.fromRGBO(24, 70, 55, 1);
 
   // Тёмная тема
-  static const darkBackgroundMain = Color(0xFF121212);   // основной фон
-  static const darkBackgroundSubtle = Color(0xFF1F2D26); // фон карточек и subtle
-  static const darkCard = Color(0xFF1F2D26);
+  static const _darkBackgroundMain = Color.fromRGBO(18, 18, 18, 1);
+  static const _darkBackgroundSubtle = Color.fromRGBO(31, 45, 38, 1);
+  static const _darkCard = Color.fromRGBO(31, 45, 38, 1);
+  static const _darkTextPrimary = Color.fromRGBO(255, 255, 255, 1);
+  static const _darkTextSecondary = Color.fromRGBO(184, 184, 184, 1);
+  static const _darkTextDisabled = Color.fromRGBO(114, 114, 114, 1);
+  static const _darkBorderLight = Color.fromRGBO(58, 58, 58, 1);
+  static const _darkBorderStrong = Color.fromRGBO(84, 171, 38, 1);
 
-  static const darkTextPrimary = Color(0xFFFFFFFF);
-  static const darkTextSecondary = Color(0xFFB8B8B8);
-  static const darkTextDisabled = Color(0xFF727272);
+  // Получение цвета в зависимости от темы
+  static Color backgroundMain(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? _darkBackgroundMain
+          : _lightBackgroundMain;
 
-  static const darkBorderLight = Color(0xFF3A3A3A);
-  static const darkBorderStrong = Color(0xFF54AB26);
+  static Color backgroundSubtle(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? _darkBackgroundSubtle
+          : _lightBackgroundSubtle;
+
+  static Color card(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? _darkCard : _lightCard;
+
+  static Color textPrimary(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? _darkTextPrimary
+          : _lightTextPrimary;
+
+  static Color textSecondary(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? _darkTextSecondary
+          : _lightTextSecondary;
+
+  static Color textDisabled(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? _darkTextDisabled
+          : _lightTextDisabled;
+
+  static Color borderLight(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? _darkBorderLight
+          : _lightBorderLight;
+
+  static Color borderStrong(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? _darkBorderStrong
+          : _lightBorderStrong;
 }

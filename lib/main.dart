@@ -22,19 +22,67 @@ class ChooseModuleApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Backstage DHGE',
+      title: 'Choose Module App',
       theme: ThemeData(
+        brightness: Brightness.light,
         primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.backgroundMain,
-        appBarTheme: const AppBarTheme(
+        scaffoldBackgroundColor: AppColors.backgroundMain(context),
+        appBarTheme: AppBarTheme(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
         ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        cardTheme: CardThemeData(
+          color: AppColors.card(context),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
           backgroundColor: AppColors.secondary,
         ),
+        textTheme: TextTheme(
+          bodyMedium: AppTextStyles.body(context),
+          titleMedium: AppTextStyles.subheading(context),
+        ),
+        dividerColor: Colors.transparent,
       ),
-      home: const LoginScreen(), // Start with the LoginScreen 
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: AppColors.primary,
+        scaffoldBackgroundColor: AppColors.backgroundMain(context),
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.textPrimary(context),
+        ),
+        cardTheme: CardThemeData(
+          color: AppColors.card(context),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: AppColors.secondary,
+        ),
+        textTheme: TextTheme(
+          bodyMedium: AppTextStyles.body(context),
+          titleMedium: AppTextStyles.subheading(context),
+        ),
+        dividerColor: Colors.transparent,
+      ),
+      themeMode: ThemeMode.system, // автоматически выбирает светлую или тёмную
+      home: const LoginScreen(),
+      routes: {
+        '/home': (context) {
+          final args =
+              ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return HomeScreen(
+            student: args['student'],
+            allModules: args['allModules'],
+          );
+        },
+      },
     );
   }
 }
