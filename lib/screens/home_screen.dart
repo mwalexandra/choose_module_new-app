@@ -40,16 +40,8 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       });
     } else {
-      selectedModules = {
-        'wpm1': [],
-        'wpm2': [],
-        'wpm3': [],
-      };
-      initialModules = {
-        'wpm1': [],
-        'wpm2': [],
-        'wpm3': [],
-      };
+      selectedModules = {'wpm1': [], 'wpm2': [], 'wpm3': []};
+      initialModules = {'wpm1': [], 'wpm2': [], 'wpm3': []};
     }
   }
 
@@ -58,44 +50,67 @@ class _HomeScreenState extends State<HomeScreen> {
       final current = selectedModules[key] ?? [];
       final initial = initialModules[key] ?? [];
       if (current.length != initial.length ||
-          !ListEquality().equals(current, initial)) {
+          !_listEquals(current, initial)) {
         return true;
       }
     }
     return false;
   }
 
+  bool _listEquals(List a, List b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  void _onModuleChanged(String semester, String moduleName, bool isSelected) {
+    final current = selectedModules[semester] ?? [];
+    if (isSelected) {
+      if (current.length >= maxModulesPerSemester) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Sie können maximal $maxModulesPerSemester Module für $semester auswählen'),
+          ),
+        );
+        return;
+      }
+      current.add(moduleName);
+    } else {
+      current.remove(moduleName);
+    }
+    setState(() {
+      selectedModules[semester] = current;
+    });
+
+    FirebaseServices.saveSelectedModules(
+      widget.student['id'],
+      selectedModules,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     final courseKey = widget.student['kurs'] ?? '';
     final courseData = widget.allModules[courseKey];
-    final courseModulesRaw = courseData?['semesters'];
+    final courseModulesRaw = courseData?['semesters'] ?? {};
     Map<String, List<Map<String, dynamic>>> courseModules = {};
 
-    if (courseModulesRaw != null && courseModulesRaw is Map) {
-      courseModulesRaw.forEach((semesterKey, semesterValue) {
-        final modulesList = <Map<String, dynamic>>[];
-        if (semesterValue != null &&
-            semesterValue is Map &&
-            semesterValue['modules'] is List) {
-          for (var m in semesterValue['modules']) {
-            if (m != null && m is Map) {
-              modulesList.add(Map<String, dynamic>.from(m));
-            }
+    courseModulesRaw.forEach((semesterKey, semesterValue) {
+      final modulesList = <Map<String, dynamic>>[];
+      if (semesterValue != null &&
+          semesterValue is Map &&
+          semesterValue['modules'] is List) {
+        for (var m in semesterValue['modules']) {
+          if (m != null && m is Map) {
+            modulesList.add(Map<String, dynamic>.from(m));
           }
         }
-        courseModules[semesterKey] = modulesList;
-      });
-    } else {
-      courseModules = {
-        'wpm1': [],
-        'wpm2': [],
-        'wpm3': [],
-      };
-    }
+      }
+      courseModules[semesterKey] = modulesList;
+    });
 
     return Scaffold(
       backgroundColor: AppColors.backgroundMain(context),
@@ -114,8 +129,8 @@ class _HomeScreenState extends State<HomeScreen> {
             // --- Student Info ---
             Card(
               color: AppColors.card(context),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 3,
               margin: const EdgeInsets.only(bottom: 16),
               child: Padding(
@@ -130,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: AppTextStyles.body(context)),
                     Text('Nachname: ${widget.student['surname'] ?? ''}',
                         style: AppTextStyles.body(context)),
-                    Text('Kurs: ${widget.student['kurs'].toUpperCase() ?? ''}',
+                    Text('Kurs: ${widget.student['kurs']?.toUpperCase() ?? ''}',
                         style: AppTextStyles.body(context)),
                   ],
                 ),
@@ -140,8 +155,8 @@ class _HomeScreenState extends State<HomeScreen> {
             // --- Save Button ---
             Card(
               color: AppColors.card(context),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 2,
               margin: const EdgeInsets.only(bottom: 16),
               child: Padding(
@@ -161,10 +176,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 widget.student['id'], selectedModules);
                             if (!mounted) return;
                             initialModules = selectedModules.map(
-                                (key, value) => MapEntry(key, List<String>.from(value)));
-                              ScaffoldMessenger.of(context).showSnackBar(
+                                (key, value) =>
+                                    MapEntry(key, List<String>.from(value)));
+                            ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Auswahl gespeichert!')),
+                                  content: Text('Auswahl gespeichert!')),
                             );
                             setState(() {});
                           }
@@ -178,120 +194,36 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // --- Semester Sections ---
-            ...courseModules.entries.map((e) {
-              final semester = e.key;
-              final modules = e.value;
+            // --- Semester Sections via SemesterCard ---
+            ...courseModules.entries.map((entry) {
+              final semester = entry.key;
+              final modules = entry.value;
 
               String openDate = 'nicht angegeben';
               String closeDate = 'nicht angegeben';
-              if (courseModulesRaw != null &&
-                  courseModulesRaw[semester] != null &&
+              if (courseModulesRaw[semester] != null &&
                   courseModulesRaw[semester] is Map) {
-                openDate = courseModulesRaw[semester]['chooseOpenDate'] ?? 'nicht angegeben';
-                closeDate = courseModulesRaw[semester]['chooseCloseDate'] ?? 'nicht angegeben';
+                openDate =
+                    courseModulesRaw[semester]['chooseOpenDate'] ?? 'nicht angegeben';
+                closeDate =
+                    courseModulesRaw[semester]['chooseCloseDate'] ??
+                        'nicht angegeben';
               }
 
-              return StatefulBuilder(
-                builder: (context, setTileState) {
-                  bool isExpanded = false;
-
-                  return Card(
-                    color: AppColors.card(context),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 2,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Theme(
-                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                      child: ExpansionTile(
-                        tilePadding: EdgeInsets.zero,
-                        collapsedBackgroundColor: Colors.transparent,
-                        backgroundColor: Colors.transparent,
-                        onExpansionChanged: (expanded) {
-                          setTileState(() => isExpanded = expanded);
-                        },
-                        title: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: isExpanded 
-                            ? AppColors.sectionHeaderActive(context)
-                            : AppColors.sectionHeaderInactive(context),
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                semester.toUpperCase(),
-                                style: AppTextStyles.subheading(context),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Wahltermine: von $openDate bis $closeDate',
-                                style: AppTextStyles.body(context).copyWith(
-                                  color: AppColors.textPrimary(context).withOpacity(0.8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        children: modules.map((m) {
-                          final moduleName = m['name'] ?? '';
-                          final moduleDozent = m['dozent'] ?? '';
-                          final isSelected =
-                              selectedModules[semester]?.contains(moduleName) ?? false;
-
-                          return CheckboxListTile(
-                            activeColor: AppColors.primary,
-                            checkColor: Colors.white,
-                            contentPadding:
-                                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            title: Text(
-                              '$moduleName ($moduleDozent)',
-                              style: AppTextStyles.body(context),
-                            ),
-                            value: isSelected,
-                            onChanged: (val) {
-                              setState(() {
-                                final selectedList = selectedModules[semester] ??= [];
-                                if (val == true) {
-                                  if (selectedList.length >= maxModulesPerSemester) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                            'Sie können maximal $maxModulesPerSemester Module für $semester auswählen'),
-                                      ),
-                                    );
-                                  } else if (!selectedList.contains(moduleName)) {
-                                    selectedList.add(moduleName);
-                                  }
-                                } else {
-                                  selectedList.remove(moduleName);
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  );
-                },
+              return SemesterCard(
+                semester: semester,
+                openDate: openDate,
+                closeDate: closeDate,
+                modules: modules,
+                selectedModules: selectedModules,
+                maxModulesPerSemester: maxModulesPerSemester,
+                onModuleChanged: (moduleName, isSelected) =>
+                    _onModuleChanged(semester, moduleName, isSelected),
               );
             }).toList(),
           ],
         ),
       ),
     );
-  }
-}
-
-class ListEquality {
-  bool equals(List a, List b) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 }

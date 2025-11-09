@@ -75,14 +75,14 @@ class AppColors {
 
   static Color sectionHeaderInactive(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? Color.fromRGBO(255, 255, 255, 0.04) // лёгкая подсветка в dark
-        : Color.fromRGBO(0, 0, 0, 0.03); // лёгкая подсветка в light
+        ? Color.fromRGBO(255, 255, 255, 0.00) // лёгкая подсветка в dark
+        : Color.fromRGBO(0, 0, 0, 0.00); // лёгкая подсветка в light
   }
 
   static Color sectionHeaderActive(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? Color.fromRGBO(255, 255, 255, 0.10) // более заметная подсветка в dark
-        : Color.fromRGBO(0, 0, 0, 0.06); // более заметная подсветка в light
+        ? Color.fromRGBO(255, 255, 255, 0.00) // более заметная подсветка в dark
+        : Color.fromRGBO(0, 0, 0, 0.00); // более заметная подсветка в light
   }
 }
 

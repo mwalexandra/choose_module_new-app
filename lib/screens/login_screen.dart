@@ -62,8 +62,11 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final studentId = _studentIdController.text.trim();
-    final password = _passwordController.text;
+    //final studentId = _studentIdController.text.trim();
+    //final password = _passwordController.text;
+    //TODO: временно захардкодил для теста
+    final studentId = "123";
+    final password = "123";
 
     final student = students[studentId];
     if (student == null) {
