@@ -30,15 +30,25 @@ class _SemesterCardState extends State<SemesterCard>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late final AnimationController _arrowController;
+  late final bool _isExpired;
 
   @override
   void initState() {
     super.initState();
+
     _arrowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
       upperBound: 0.5,
     );
+
+    // --- Проверка срока ---
+    try {
+      final close = DateTime.parse(widget.closeDate);
+      _isExpired = DateTime.now().isAfter(close);
+    } catch (_) {
+      _isExpired = false; // если формат даты неверный
+    }
   }
 
   @override
@@ -69,16 +79,13 @@ class _SemesterCardState extends State<SemesterCard>
                 }
               });
             },
-            borderRadius: const BorderRadius.all(Radius.circular(12)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppColors.card(context),
-                border: Border.all(
-                  color: AppColors.primary,
-                  width: 2,
-                ),
-                borderRadius: const BorderRadius.all(Radius.circular(12)),
+                color: AppColors.primary,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(12)),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
@@ -91,34 +98,42 @@ class _SemesterCardState extends State<SemesterCard>
                         Text(
                           widget.semester.toUpperCase(),
                           style: AppTextStyles.subheading(context)
-                              .copyWith(color: AppColors.textPrimary(context)),
+                              .copyWith(color: Colors.white),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Wahltermine: von ${widget.openDate} bis ${widget.closeDate}',
                           style: AppTextStyles.body(context)
-                              .copyWith(color: AppColors.textPrimary(context)),
+                              .copyWith(color: Colors.white70),
                         ),
+                        if (_isExpired)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Auswahl geschlossen',
+                              style: AppTextStyles.body(context)
+                                  .copyWith(color: Colors.redAccent),
+                            ),
+                          ),
                       ],
                     ),
                   ),
                   RotationTransition(
                     turns: _arrowController,
-                    child: Icon(Icons.expand_more, color: AppColors.textPrimary(context)),
+                    child: Icon(Icons.expand_more, color: Colors.white),
                   ),
                 ],
               ),
             ),
           ),
 
-          // --- Module list ---
+          // --- Modules ---
           if (_isExpanded)
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppColors.card(context), // фон для модулей
-                borderRadius: const BorderRadius.all(
-                    Radius.circular(12)),
+                color: AppColors.card(context),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
               ),
               child: Column(
                 children: widget.modules.map((m) {
@@ -137,8 +152,10 @@ class _SemesterCardState extends State<SemesterCard>
                       style: AppTextStyles.body(context),
                     ),
                     value: isSelected,
-                    onChanged: (val) =>
-                        widget.onModuleChanged(moduleName, val ?? false),
+                    onChanged: _isExpired
+                        ? null // выбор отключён, если срок истёк
+                        : (val) =>
+                            widget.onModuleChanged(moduleName, val ?? false),
                   );
                 }).toList(),
               ),
