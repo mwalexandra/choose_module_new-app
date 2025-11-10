@@ -35,8 +35,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (raw != null && raw is Map) {
       raw.forEach((key, value) {
         if (value is List) {
-          selectedModules[key.toString()] = value.map((e) => e.toString()).toList();
-          initialModules[key.toString()] = List<String>.from(selectedModules[key]!);
+          selectedModules[key.toString()] =
+              value.map((e) => e.toString()).toList();
+          initialModules[key.toString()] =
+              List<String>.from(selectedModules[key]!);
         } else {
           selectedModules[key.toString()] = [];
           initialModules[key.toString()] = [];
@@ -52,22 +54,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _recalculateParticipants() async {
-    setState(() {
-      _isLoadingParticipants = true;
-    });
-    await recalcParticipants(); // функция из отдельного файла
-    setState(() {
-      _isLoadingParticipants = false;
-    });
+    setState(() => _isLoadingParticipants = true);
+    await recalcParticipants();
+    setState(() => _isLoadingParticipants = false);
   }
 
   bool get isModified {
     for (var key in selectedModules.keys) {
       final current = selectedModules[key] ?? [];
       final initial = initialModules[key] ?? [];
-      if (current.length != initial.length || !_listEquals(current, initial)) {
-        return true;
-      }
+      if (!_listEquals(current, initial)) return true;
     }
     return false;
   }
@@ -80,19 +76,19 @@ class _HomeScreenState extends State<HomeScreen> {
     return true;
   }
 
-  void _onModuleChanged(
+  Future<void> _onModuleChanged(
       String semester, String moduleName, bool isSelected) async {
     final current = selectedModules[semester] ?? [];
 
-    // проверка ограничения на выбор
+    // Проверка ограничения на выбор
     if (isSelected && current.length >= maxModulesPerSemester) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              'Sie können maximal $maxModulesPerSemester Module für $semester auswählen'),
+              'Sie können maximal $maxModulesPerSemester Module für $semester auswählen.'),
         ),
       );
-      return; // ничего не меняем
+      return;
     }
 
     setState(() {
@@ -104,20 +100,20 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedModules[semester] = current;
     });
 
-    // обновляем базу данных выбранных модулей студента
+    // Обновление в базе данных
     await FirebaseServices.saveSelectedModules(
       widget.student['id'],
       selectedModules,
     );
 
-    // обновляем участников только если реально добавили/удалили модуль
+    // Локальное обновление участников
     if (isSelected) {
       await FirebaseServices.incrementParticipants(semester, moduleName);
     } else {
       await FirebaseServices.decrementParticipants(semester, moduleName);
     }
 
-    // после изменения обновляем пересчёт участников для актуальных значений
+    // Пересчёт всех участников
     await _recalculateParticipants();
   }
 
@@ -178,8 +174,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text('Nachname: ${widget.student['surname'] ?? ''}',
                               style: AppTextStyles.body(context)),
                           Text(
-                              'Kurs: ${widget.student['kurs']?.toUpperCase() ?? ''}',
-                              style: AppTextStyles.body(context)),
+                            'Kurs: ${widget.student['kurs']?.toUpperCase() ?? ''}',
+                            style: AppTextStyles.body(context),
+                          ),
                         ],
                       ),
                     ),
@@ -206,11 +203,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: isModified
                               ? () async {
                                   await FirebaseServices.saveSelectedModules(
-                                      widget.student['id'], selectedModules);
+                                    widget.student['id'],
+                                    selectedModules,
+                                  );
                                   if (!mounted) return;
                                   initialModules = selectedModules.map(
-                                      (key, value) => MapEntry(
-                                          key, List<String>.from(value)));
+                                      (key, value) =>
+                                          MapEntry(key, List<String>.from(value)));
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                         content: Text('Auswahl gespeichert!')),
@@ -227,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  // --- Semester Sections via SemesterCard ---
+                  // --- Semester Sections ---
                   ...courseModules.entries.map((entry) {
                     final semester = entry.key;
                     final modules = entry.value;
@@ -238,9 +237,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         courseModulesRaw[semester] is Map) {
                       openDate = courseModulesRaw[semester]['chooseOpenDate'] ??
                           'nicht angegeben';
-                      closeDate = courseModulesRaw[semester]
-                              ['chooseCloseDate'] ??
-                          'nicht angegeben';
+                      closeDate =
+                          courseModulesRaw[semester]['chooseCloseDate'] ??
+                              'nicht angegeben';
                     }
 
                     return SemesterCard(

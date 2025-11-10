@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
+import '../firebase/firebase_services.dart';
 
 class SemesterCard extends StatefulWidget {
   final String semester;
@@ -26,8 +27,7 @@ class SemesterCard extends StatefulWidget {
   State<SemesterCard> createState() => _SemesterCardState();
 }
 
-class _SemesterCardState extends State<SemesterCard>
-    with SingleTickerProviderStateMixin {
+class _SemesterCardState extends State<SemesterCard> with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late final AnimationController _arrowController;
   late bool _isSelectionActive;
@@ -61,22 +61,59 @@ class _SemesterCardState extends State<SemesterCard>
     return _isSelectionActive && participants < maxParticipants;
   }
 
-  void _handleModuleChange(Map<String, dynamic> module, bool isSelected) {
+  void _handleModuleChange(Map<String, dynamic> module, bool isSelected) async {
     final moduleName = module['name'] ?? '';
     final participants = module['participants'] ?? 0;
     final maxParticipants = module['maxParticipants'] ?? 20;
+    final semester = widget.semester;
+
+    // --- Проверяем, сколько модулей уже выбрано ---
+    final currentSelections = widget.selectedModules[semester]?.length ?? 0;
+
+    // --- Если студент уже выбрал максимум и пытается выбрать ещё ---
+    if (isSelected && currentSelections >= widget.maxModulesPerSemester) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Вы не можете выбрать больше ${widget.maxModulesPerSemester} модулей.'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return; // Никаких изменений ни в UI, ни в Firebase
+    }
+
+    // --- Проверяем возможность выбора по количеству участников ---
+    if (isSelected && participants >= maxParticipants) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Максимальное количество участников достигнуто.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
 
     setState(() {
-      // Обновляем локальное количество участников
+      // Обновляем локально
       if (isSelected) {
-        if (participants < maxParticipants) {
-          module['participants'] = participants + 1;
-        }
+        module['participants'] = participants + 1;
       } else {
         module['participants'] = (participants > 0) ? participants - 1 : 0;
       }
     });
 
+    // --- Обновляем Firebase ---
+    try {
+      await FirebaseServices.updateModuleParticipantsDelta(
+        module['courseId'] ?? 'defaultCourse',
+        semester,
+        module['id'] ?? moduleName,
+        isSelected ? 1 : -1,
+      );
+    } catch (e) {
+      print('Ошибка обновления участников в Firebase: $e');
+    }
+
+    // --- Передаём информацию родителю ---
     widget.onModuleChanged(moduleName, isSelected);
   }
 

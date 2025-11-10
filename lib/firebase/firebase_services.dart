@@ -191,11 +191,55 @@ class FirebaseServices {
   }
 
   /// Обновить все модули целиком
-static Future<void> updateModules(Map<String, dynamic> modules) async {
-  try {
-    await databaseReference.child('modules').set(modules);
-  } catch (e) {
-    print('Ошибка при updateModules: $e');
+  static Future<void> updateModules(Map<String, dynamic> modules) async {
+    try {
+      await databaseReference.child('modules').set(modules);
+    } catch (e) {
+      print('Ошибка при updateModules: $e');
+    }
   }
-}
+
+   /// Обновить количество участников модуля с изменением на delta (+1 или -1)
+  static Future<void> updateModuleParticipantsDelta(
+      String courseId,
+      String semester,
+      String moduleId,
+      int delta,
+      ) async {
+    try {
+      final ref = databaseReference.child('modules/$courseId/semesters/$semester/modules');
+      final snapshot = await ref.get();
+
+      if (!snapshot.exists || snapshot.value == null) return;
+
+      final modulesList = _convertSnapshotToList(snapshot.value);
+
+      for (int i = 0; i < modulesList.length; i++) {
+        final module = modulesList[i];
+        final id = module['id']?.toString() ?? '';
+        if (id == moduleId) {
+          final current = (module['participants'] ?? 0) is int
+              ? module['participants']
+              : int.tryParse(module['participants'].toString()) ?? 0;
+          final max = (module['maxParticipants'] ?? 999) is int
+              ? module['maxParticipants']
+              : int.tryParse(module['maxParticipants'].toString()) ?? 999;
+
+          // Вычисляем новое значение
+          int updated = current + delta;
+          if (updated < 0) updated = 0;
+          if (updated > max) updated = max;
+
+          // Обновляем только если действительно изменилось
+          if (updated != current) {
+            module['participants'] = updated;
+            await ref.set(modulesList);
+          }
+          break;
+        }
+      }
+    } catch (e) {
+      print('Ошибка при updateModuleParticipantsDelta: $e');
+    }
+  }
 }
