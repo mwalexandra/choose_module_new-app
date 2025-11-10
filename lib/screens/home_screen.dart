@@ -32,10 +32,13 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Загружаем актуальные данные модулей из Firebase
       final modulesData = await FirebaseServices.getModules();
-      final List<Semester> semesters = [];
 
-      final courseData = modulesData[widget.student.course]?['semesters'] ?? {};
+      final List<Semester> semesters = [];
+      final courseKey = widget.student.course;
+      final courseData = modulesData[courseKey]?['semesters'] ?? {};
+
       courseData.forEach((semKey, semVal) {
         final open = semVal['chooseOpenDate'] != null
             ? DateTime.tryParse(semVal['chooseOpenDate'])
@@ -49,12 +52,20 @@ class _HomeScreenState extends State<HomeScreen> {
           for (var m in semVal['modules']) {
             if (m is Map) {
               final module = Module.fromMap(Map<String, dynamic>.from(m));
-              // Помечаем выбранные модули
-              final origSemester = widget.student.semesters
+
+              // --- проверяем, выбрал ли студент этот модуль ---
+              final originalSemester = widget.student.semesters
                   .firstWhere((s) => s.name == semKey, orElse: () => Semester(name: semKey, openDate: open ?? DateTime.now(), closeDate: close ?? DateTime.now(), modules: []));
-              if (origSemester.modules.any((mod) => mod.name == module.name && mod.isSelected)) {
-                module.isSelected = true;
+              final isSelected = originalSemester.modules
+                  .any((mod) => mod.name == module.name && mod.isSelected);
+
+              module.isSelected = isSelected;
+
+              // --- если выбран, увеличиваем participants на 1 ---
+              if (isSelected) {
+                module.participants = (module.participants ?? 0) + 1;
               }
+
               modulesList.add(module);
             }
           }
@@ -77,8 +88,8 @@ class _HomeScreenState extends State<HomeScreen> {
         password: widget.student.password,
       );
     } catch (e) {
-      print('Ein Fehler beim Laden der Studentendaten: $e');
-      _studentCopy = widget.student;
+      print('Ein Fehler beim Laden der Studiendaten: $e');
+      _studentCopy = widget.student; // fallback
     }
 
     setState(() => _isLoading = false);

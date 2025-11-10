@@ -107,6 +107,6 @@ Future<void> recalcParticipants() async {
 
     print('recalcParticipants: updated participants counts successfully');
   } catch (e, st) {
-    print('Ошибка при recalcParticipants: $e\n$st');
+    print('Fehler beim recalcParticipants: $e\n$st');
   }
 }
