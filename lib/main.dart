@@ -21,7 +21,7 @@ class ChooseModuleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Backstage DHGE - Choose Module App',
+      title: 'Backstage DHGE - WPM App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,
@@ -56,12 +56,12 @@ class ChooseModuleApp extends StatelessWidget {
       onGenerateRoute: (settings) {
         final uri = Uri.parse(settings.name ?? '');
 
-        // --- стартовая страница (логин) ---
+        // --- Die erste Seite (Login) ---
         if (uri.path == '/' || uri.path.isEmpty) {
           return MaterialPageRoute(builder: (_) => const LoginScreen());
         }
 
-        // --- маршрут вида /home/<studentId> ---
+        // --- Pfad /home/<studentId> ---
         if (uri.path == '/home') {
           final args = settings.arguments as Map<String, dynamic>?;
           final student = args?['student'] as Student?;

@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (studentId.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte ID und Passwort eingeben')),
+        const SnackBar(content: Text('Bitte Student-ID und Passwort eingeben')),
       );
       return;
     }
@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Загружаем данные студента из Firebase
+      // Laden die Daten von Firebase herunter
       final studentsData = await FirebaseServices.getStudents();
 
       if (!studentsData.containsKey(studentId)) {
@@ -44,13 +44,13 @@ class _LoginScreenState extends State<LoginScreen> {
         throw 'Falsches Passwort';
       }
 
-      // Создаём объект Student
+      // Stellen ein Student-Objekt her
       final allModules = await FirebaseServices.getModules();
       final student = Student.fromMap(studentId, studentMap, allModules);
       final routePath = '#/home/${student.id}';
-      // Обновляем URL для веб-версии
+      // Aktualisiere URL für Web-Version
       pushWebRoute(routePath);
-      // Переходим на HomeScreen
+      // Navigiere zum HomeScreen
       Navigator.pushNamed(
         context,
         '/home',
@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Backstage DHGE Login', style: AppTextStyles.heading(context)),
+              Text('Login', style: AppTextStyles.heading(context)),
               const SizedBox(height: 32),
               TextField(
                 controller: _idController,
