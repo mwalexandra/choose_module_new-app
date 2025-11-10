@@ -3,7 +3,7 @@ import '../firebase/firebase_services.dart';
 import '../models/student.dart';
 import '../constants/app_styles.dart';
 import '../constants/app_colors.dart';
-import '../../utils/web_url_helper.dart';
+import '../utils/web_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -47,15 +47,15 @@ class _LoginScreenState extends State<LoginScreen> {
       // Создаём объект Student
       final allModules = await FirebaseServices.getModules();
       final student = Student.fromMap(studentId, studentMap, allModules);
-
+      final routePath = '#/home/${student.id}';
+      // Обновляем URL для веб-версии
+      pushWebRoute(routePath);
       // Переходим на HomeScreen
       Navigator.pushNamed(
         context,
         '/home',
         arguments: {'student': student},
       );
-      // обновляем URL только если это Web
-      updateWebUrl(student.id);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login fehlgeschlagen: $e')),

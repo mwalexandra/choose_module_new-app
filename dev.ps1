@@ -32,46 +32,12 @@ switch ($command) {
     }
 
     "android" {
-        # Путь к эмулятору
-        $emulatorPath = "C:\Users\manik\AppData\Local\Android\Sdk\emulator\emulator.exe"
-
-        # Список доступных Flutter-устройств
-        $devices = flutter devices --machine | ConvertFrom-Json
-
-        # Проверяем, есть ли уже запущенный Pixel_4
-        $pixel4Running = $false
-        foreach ($d in $devices) {
-            if ($d.name -eq $emulatorName) {
-                $pixel4Running = $true
-                break
-            }
-        }
-
-        if (-not $pixel4Running) {
-            Write-Host "Starte Emulator $emulatorName..."
-            Start-Process $emulatorPath "-avd $emulatorName -scale 0.75"
-            Write-Host "Warte 30 Sekunden, bis der Emulator vollstaendig gestartet ist..."
-            Start-Sleep -Seconds 30
-        } else {
-            Write-Host "Emulator $emulatorName läuft bereits."
-        }
-
-        # Ждем, пока Flutter распознает эмулятор
-        do {
-            Start-Sleep -Seconds 5
-            $devices = flutter devices --machine | ConvertFrom-Json
-            $pixel4Running = $false
-            foreach ($d in $devices) {
-                if ($d.name -eq $emulatorName) {
-                    $pixel4Running = $true
-                    $deviceId = $d.id
-                    break
-                }
-            }
-        } until ($pixel4Running)
-
-        Write-Host "Starte Flutter-Anwendung auf Emulator $emulatorName..."
-        flutter run -d $deviceId
+        Write-Host "Starte Android-Emulator '$emulatorName'..."
+        Start-Process "flutter" -ArgumentList "emulators", "--launch", "$emulatorName"
+        Start-Sleep -Seconds 15
+        Write-Host "Starte Flutter-App auf dem Emulator..."
+        flutter run -d emulator-5554
+        emulator -avd Pixel_4 -scale 0.75
     }
 
     "build-apk" {
