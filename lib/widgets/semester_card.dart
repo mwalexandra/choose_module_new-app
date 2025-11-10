@@ -1,23 +1,16 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
-import '../firebase/firebase_services.dart';
+import '../models/module.dart';
+import '../models/semester.dart';
 
 class SemesterCard extends StatefulWidget {
-  final String semester;
-  final String openDate;
-  final String closeDate;
-  final List<Map<String, dynamic>> modules;
-  final Map<String, List<String>> selectedModules;
+  final Semester semester;
   final int maxModulesPerSemester;
-  final void Function(String moduleName, bool isSelected) onModuleChanged;
+  final void Function(Module module) onModuleChanged;
 
   const SemesterCard({
     required this.semester,
-    required this.openDate,
-    required this.closeDate,
-    required this.modules,
-    required this.selectedModules,
     required this.maxModulesPerSemester,
     required this.onModuleChanged,
     Key? key,
@@ -30,7 +23,6 @@ class SemesterCard extends StatefulWidget {
 class _SemesterCardState extends State<SemesterCard> with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late final AnimationController _arrowController;
-  late bool _isSelectionActive;
 
   @override
   void initState() {
@@ -40,52 +32,28 @@ class _SemesterCardState extends State<SemesterCard> with SingleTickerProviderSt
       duration: const Duration(milliseconds: 200),
       upperBound: 0.5,
     );
-    _isSelectionActive = _checkSelectionActive();
   }
 
-  bool _checkSelectionActive() {
-    try {
-      final now = DateTime.now();
-      final open = DateTime.parse(widget.openDate);
-      final close = DateTime.parse(widget.closeDate);
-      return now.isAfter(open.subtract(const Duration(days: 1))) &&
-          now.isBefore(close.add(const Duration(days: 1)));
-    } catch (_) {
-      return true; // если формат даты некорректный, выбор разрешаем
-    }
-  }
+  bool get _isSelectionActive => widget.semester.isSelectionActive();
 
-  bool _isModuleSelectable(Map<String, dynamic> module) {
-    final participants = module['participants'] ?? 0;
-    final maxParticipants = module['maxParticipants'] ?? 20;
-    return _isSelectionActive && participants < maxParticipants;
-  }
+  void _toggleModuleSelection(Module module) {
+    final selectedCount = widget.semester.modules.where(
+      (m) => m.isSelected).length;
 
-  void _handleModuleChange(Map<String, dynamic> module, bool isSelected) async {
-    final moduleName = module['name'] ?? '';
-    final participants = module['participants'] ?? 0;
-    final maxParticipants = module['maxParticipants'] ?? 20;
-    final semester = widget.semester;
-
-    // --- Проверяем, сколько модулей уже выбрано ---
-    final currentSelections = widget.selectedModules[semester]?.length ?? 0;
-
-    // --- Если студент уже выбрал максимум и пытается выбрать ещё ---
-    if (isSelected && currentSelections >= widget.maxModulesPerSemester) {
+    if (!module.isSelected && selectedCount >= widget.maxModulesPerSemester) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Вы не можете выбрать больше ${widget.maxModulesPerSemester} модулей.'),
+          content: Text('Sie können nicht mehr als ${widget.maxModulesPerSemester} Module auswählen.'),
           duration: const Duration(seconds: 2),
         ),
       );
-      return; // Никаких изменений ни в UI, ни в Firebase
+      return;
     }
 
-    // --- Проверяем возможность выбора по количеству участников ---
-    if (isSelected && participants >= maxParticipants) {
+    if (!module.isSelected && module.participants >= module.maxParticipants) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Максимальное количество участников достигнуто.'),
+          content: Text('Maximale Anzahl von Teilnehmern erreicht.'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -93,28 +61,11 @@ class _SemesterCardState extends State<SemesterCard> with SingleTickerProviderSt
     }
 
     setState(() {
-      // Обновляем локально
-      if (isSelected) {
-        module['participants'] = participants + 1;
-      } else {
-        module['participants'] = (participants > 0) ? participants - 1 : 0;
-      }
+      module.isSelected = !module.isSelected;
+      module.participants += module.isSelected ? 1 : -1;
     });
 
-    // --- Обновляем Firebase ---
-    try {
-      await FirebaseServices.updateModuleParticipantsDelta(
-        module['courseId'] ?? 'defaultCourse',
-        semester,
-        module['id'] ?? moduleName,
-        isSelected ? 1 : -1,
-      );
-    } catch (e) {
-      print('Ошибка обновления участников в Firebase: $e');
-    }
-
-    // --- Передаём информацию родителю ---
-    widget.onModuleChanged(moduleName, isSelected);
+    widget.onModuleChanged(module);
   }
 
   @override
@@ -133,16 +84,12 @@ class _SemesterCardState extends State<SemesterCard> with SingleTickerProviderSt
       margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         children: [
-          // --- Header ---
+          // Header
           InkWell(
             onTap: () {
               setState(() {
                 _isExpanded = !_isExpanded;
-                if (_isExpanded) {
-                  _arrowController.forward();
-                } else {
-                  _arrowController.reverse();
-                }
+                _isExpanded ? _arrowController.forward() : _arrowController.reverse();
               });
             },
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
@@ -160,14 +107,13 @@ class _SemesterCardState extends State<SemesterCard> with SingleTickerProviderSt
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.semester.toUpperCase(),
-                          style: AppTextStyles.subheading(context)
-                              .copyWith(color: Colors.white),
-                        ),
+                        Text(widget.semester.name.toUpperCase(),
+                            style: AppTextStyles.subheading(context)
+                                .copyWith(color: Colors.white)),
                         const SizedBox(height: 4),
                         Text(
-                          'Wahltermine: von ${widget.openDate} bis ${widget.closeDate}',
+                          'Wahltermine: von ${widget.semester.openDate.toLocal().toString().split(" ")[0]} '
+                          'bis ${widget.semester.closeDate.toLocal().toString().split(" ")[0]}',
                           style: AppTextStyles.body(context)
                               .copyWith(color: Colors.white70),
                         ),
@@ -185,61 +131,49 @@ class _SemesterCardState extends State<SemesterCard> with SingleTickerProviderSt
                   ),
                   RotationTransition(
                     turns: _arrowController,
-                    child: Icon(Icons.expand_more, color: Colors.white),
+                    child: const Icon(Icons.expand_more, color: Colors.white),
                   ),
                 ],
               ),
             ),
           ),
 
-          // --- Modules ---
+          // Modules
           if (_isExpanded)
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
                 color: AppColors.card(context),
-                borderRadius:
-                    const BorderRadius.vertical(bottom: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
               ),
               child: Column(
-                children: widget.modules.map((m) {
-                  final moduleName = m['name'] ?? '';
-                  final moduleDozent = m['dozent'] ?? '';
-                  final participants = m['participants'] ?? 0;
-                  final maxParticipants = m['maxParticipants'] ?? 20;
-                  final isSelected =
-                      widget.selectedModules[widget.semester]?.contains(moduleName) ?? false;
-                  final isSelectable = _isSelectionActive && participants < maxParticipants;
+                children: widget.semester.modules.map((module) {
+                  final isSelectable =
+                      _isSelectionActive && (module.isSelected || module.participants < module.maxParticipants);
 
                   return CheckboxListTile(
                     activeColor: colorScheme.primary,
                     checkColor: colorScheme.onPrimary,
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     title: Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            '$moduleName ($moduleDozent)',
-                            style: AppTextStyles.body(context),
-                          ),
+                          child: Text('${module.name} (${module.dozent})',
+                              style: AppTextStyles.body(context)),
                         ),
                         SizedBox(
                           width: 60,
                           child: Text(
-                            '$participants/$maxParticipants',
+                            '${module.participants}/${module.maxParticipants}',
                             textAlign: TextAlign.right,
                             style: AppTextStyles.body(context).copyWith(
-                              color: isSelectable ? Colors.black54 : Colors.redAccent,
-                            ),
+                                color: isSelectable ? Colors.black54 : Colors.redAccent),
                           ),
                         ),
                       ],
                     ),
-                    value: isSelected,
-                    onChanged: isSelectable
-                        ? (val) => _handleModuleChange(m, val ?? false)
-                        : null,
+                    value: module.isSelected,
+                    onChanged: isSelectable ? (_) => _toggleModuleSelection(module) : null,
                   );
                 }).toList(),
               ),

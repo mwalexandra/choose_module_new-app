@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'constants/app_styles.dart';
 import 'constants/app_colors.dart';
+import 'models/student.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,60 +27,59 @@ class ChooseModuleApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.light,
         primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.backgroundMain(context),
-        appBarTheme: AppBarTheme(
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
         ),
         cardTheme: CardThemeData(
-          color: AppColors.card(context),
+          color: Colors.white,
           elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: AppColors.secondary,
         ),
-        textTheme: TextTheme(
-          bodyMedium: AppTextStyles.body(context),
-          titleMedium: AppTextStyles.subheading(context),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(fontSize: 16),
+          titleMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         dividerColor: Colors.transparent,
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.backgroundMain(context),
+        scaffoldBackgroundColor: Colors.black,
         appBarTheme: AppBarTheme(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textPrimary(context),
         ),
         cardTheme: CardThemeData(
-          color: AppColors.card(context),
+          color: Colors.grey[900],
           elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: AppColors.secondary,
         ),
-        textTheme: TextTheme(
-          bodyMedium: AppTextStyles.body(context),
-          titleMedium: AppTextStyles.subheading(context),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(fontSize: 16),
+          titleMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         dividerColor: Colors.transparent,
       ),
-      themeMode: ThemeMode.system, // автоматически выбирает светлую или тёмную
+      themeMode: ThemeMode.system,
       home: const LoginScreen(),
       routes: {
         '/home': (context) {
           final args =
-              ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+              ModalRoute.of(context)!.settings.arguments as Map<String, Student>;
           return HomeScreen(
-            student: args['student'],
-            allModules: args['allModules'],
+            student: args['student']!,
           );
         },
       },

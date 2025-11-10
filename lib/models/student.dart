@@ -5,14 +5,16 @@ class Student {
   final String id;
   final String name;
   final String surname;
-  final String kurs;
+  final String course;
+  final String password;
   final List<Semester> semesters;
 
   Student({
     required this.id,
     required this.name,
     required this.surname,
-    required this.kurs,
+    required this.course,
+    required this.password,
     required this.semesters,
   });
 
@@ -20,10 +22,11 @@ class Student {
       Map<String, dynamic> allModules) {
     final name = map['name'] ?? '';
     final surname = map['surname'] ?? '';
-    final kurs = map['kurs'] ?? '';
+    final course = map['course'] ?? '';
     final selectedModulesRaw = map['selectedModules'] ?? {};
+    final password = map['password'] ?? '';
 
-    final courseModulesRaw = allModules[kurs]?['semesters'] ?? {};
+    final courseModulesRaw = allModules[course]?['semesters'] ?? {};
     final semesters = <Semester>[];
 
     courseModulesRaw.forEach((semesterKey, semesterDataRaw) {
@@ -44,8 +47,9 @@ class Student {
       id: id,
       name: name,
       surname: surname,
-      kurs: kurs,
+      course: course,
       semesters: semesters,
+      password: password,
     );
   }
 
@@ -61,7 +65,7 @@ class Student {
     return {
       'name': name,
       'surname': surname,
-      'kurs': kurs,
+      'course': course,
       'selectedModules': selectedModules,
     };
   }
