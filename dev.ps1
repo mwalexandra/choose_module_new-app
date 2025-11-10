@@ -37,7 +37,6 @@ switch ($command) {
         Start-Sleep -Seconds 15
         Write-Host "Starte Flutter-App auf dem Emulator..."
         flutter run -d emulator-5554
-        emulator -avd Pixel_4 -scale 0.75
     }
 
     "build-apk" {
