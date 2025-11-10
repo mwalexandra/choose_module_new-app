@@ -2,72 +2,111 @@ import 'package:firebase_database/firebase_database.dart';
 
 final DatabaseReference database = FirebaseDatabase.instance.ref();
 
-/// Пересчёт участников для всех модулей
+/// Пересчёт участников для всех модулей по структуре:
+/// modules -> <courseId> -> { ..., semesters: { <semesterKey>: { modules: [ {id,name,participants,...}, ... ] } } }
 Future<void> recalcParticipants() async {
   try {
-    // --- Получаем всех студентов ---
+    // --- 1) Считаем выборы студентов: course -> semester -> moduleName -> count
     final studentsSnapshot = await database.child('students').get();
     if (!studentsSnapshot.exists || studentsSnapshot.value == null) return;
 
-    final studentsRaw = studentsSnapshot.value as Map<dynamic, dynamic>;
-    final students = studentsRaw.map((key, value) {
-      return MapEntry(key.toString(), Map<String, dynamic>.from(value as Map));
-    });
+    final studentsRaw = studentsSnapshot.value;
+    // Normalize to Map<String, dynamic>
+    final Map<String, dynamic> students = (studentsRaw is Map)
+        ? Map<String, dynamic>.from(studentsRaw.cast())
+        : <String, dynamic>{};
 
-    // --- Считаем участников для каждого модуля ---
-    final Map<String, Map<String, int>> participantsCount = {};
+    final Map<String, Map<String, Map<String, int>>> counts = {};
+    for (final studentEntry in students.entries) {
+      final student = studentEntry.value;
+      if (student is! Map) continue;
+      final courseId = (student['kurs'] ?? '').toString();
+      if (courseId.isEmpty) continue;
 
-    for (var student in students.values) {
-      final selectedModulesRaw = student['selectedModules'] ?? {};
-      if (selectedModulesRaw is! Map) continue;
+      final selectedRaw = student['selectedModules'];
+      if (selectedRaw == null || selectedRaw is! Map) continue;
 
-      final selectedModules = selectedModulesRaw.map((key, value) {
-        return MapEntry(key.toString(), value is List ? value.map((e) => e.toString()).toList() : <String>[]);
-      });
-
-      selectedModules.forEach((semester, modulesList) {
-        participantsCount.putIfAbsent(semester, () => {});
-        for (var moduleName in modulesList) {
-          participantsCount[semester]!.update(moduleName, (v) => v + 1, ifAbsent: () => 1);
+      final selected = Map<String, dynamic>.from(selectedRaw.cast());
+      selected.forEach((semesterKey, modulesValue) {
+        final moduleList = <String>[];
+        if (modulesValue is List) {
+          for (var e in modulesValue) {
+            moduleList.add(e?.toString() ?? '');
+          }
+        }
+        if (moduleList.isEmpty) return;
+        counts.putIfAbsent(courseId, () => {});
+        counts[courseId]!.putIfAbsent(semesterKey, () => {});
+        for (final moduleName in moduleList) {
+          if (moduleName.isEmpty) continue;
+          counts[courseId]![semesterKey]!.update(moduleName, (v) => v + 1,
+              ifAbsent: () => 1);
         }
       });
     }
 
-    // --- Обновляем базу данных с новым числом участников ---
+    // --- 2) Обход всех курсов/семестров в modules и обновление participants
     final modulesSnapshot = await database.child('modules').get();
     if (!modulesSnapshot.exists || modulesSnapshot.value == null) return;
 
-    final modulesRaw = modulesSnapshot.value as Map<dynamic, dynamic>;
-    final updatedModules = <String, dynamic>{};
+    final modulesRaw = modulesSnapshot.value;
+    if (modulesRaw is! Map) return;
 
-    modulesRaw.forEach((semesterKey, semesterDataRaw) {
-      final semesterData = Map<String, dynamic>.from(semesterDataRaw as Map);
-      final modulesListRaw = semesterData['modules'] ?? [];
-      final modulesList = <Map<String, dynamic>>[];
+    // Для каждого courseId обновим его semesters -> modules
+    for (final courseEntry in (modulesRaw as Map).entries) {
+      final courseId = courseEntry.key.toString();
+      final courseDataRaw = courseEntry.value;
+      if (courseDataRaw == null || courseDataRaw is! Map) continue;
 
-      if (modulesListRaw is List) {
-        for (var m in modulesListRaw) {
-          if (m is Map) {
-            modulesList.add(Map<String, dynamic>.from(m));
+      final courseData = Map<String, dynamic>.from(courseDataRaw.cast());
+      final semestersRaw = courseData['semesters'];
+      if (semestersRaw == null || semestersRaw is! Map) continue;
+
+      // Обновлённая структура семестров (либо перезапишем модули по-отдельности)
+      for (final semesterEntry in (semestersRaw as Map).entries) {
+        final semesterKey = semesterEntry.key.toString();
+        final semesterDataRaw = semesterEntry.value;
+        if (semesterDataRaw == null || semesterDataRaw is! Map) continue;
+
+        final semesterData = Map<String, dynamic>.from(semesterDataRaw.cast());
+        final modulesListRaw = semesterData['modules'];
+
+        final List<Map<String, dynamic>> modulesList = [];
+        if (modulesListRaw is List) {
+          for (var m in modulesListRaw) {
+            if (m is Map) {
+              modulesList.add(Map<String, dynamic>.from(m.cast()));
+            }
+          }
+        } else if (modulesListRaw is Map) {
+          // на всякий случай, если модули хранятся в виде Map<index, {...}>
+          for (final mEntry in modulesListRaw.entries) {
+            if (mEntry.value is Map) {
+              modulesList.add(Map<String, dynamic>.from((mEntry.value as Map).cast()));
+            }
           }
         }
+
+        // Для каждого модуля ставим participants = counts[courseId]?[semesterKey]?[moduleName] ?? 0
+        for (final module in modulesList) {
+          final name = (module['name'] ?? '').toString();
+          final newCount = counts[courseId] != null &&
+                  counts[courseId]![semesterKey] != null &&
+                  counts[courseId]![semesterKey]!.containsKey(name)
+              ? counts[courseId]![semesterKey]![name]!
+              : 0;
+          module['participants'] = newCount;
+        }
+
+        // Сохраняем список модулей для этого семестра обратно в БД
+        await database
+            .child('modules/$courseId/semesters/$semesterKey/modules')
+            .set(modulesList);
       }
+    }
 
-      for (var module in modulesList) {
-        final name = module['name'] ?? '';
-        final count = participantsCount[semesterKey]?.containsKey(name) == true
-            ? participantsCount[semesterKey]![name]!
-            : 0;
-        module['participants'] = count;
-      }
-
-      semesterData['modules'] = modulesList;
-      updatedModules[semesterKey.toString()] = semesterData;
-    });
-
-    await database.child('modules').set(updatedModules);
-    print('Количество участников пересчитано и обновлено!');
-  } catch (e) {
-    print('Ошибка при пересчёте участников: $e');
+    print('recalcParticipants: updated participants counts successfully');
+  } catch (e, st) {
+    print('Ошибка при recalcParticipants: $e\n$st');
   }
 }
