@@ -3,7 +3,7 @@ import '../firebase/firebase_services.dart';
 import '../models/student.dart';
 import '../constants/app_styles.dart';
 import '../constants/app_colors.dart';
-import '../utils/web_utils.dart';
+import '../utils/url_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,9 +17,30 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  Map<String, String> urlParams = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Получаем параметры из URL (только веб)
+    urlParams = getUrlParameters();
+
+    // Если есть URL-параметры, заполняем поля
+    if (urlParams.isNotEmpty) {
+      _idController.text = urlParams['login'] ?? '';
+      _passwordController.text = ''; // пароль можно оставить пустым
+    }
+  }
+
   Future<void> _login() async {
-    final studentId = _idController.text.trim();
-    final password = _passwordController.text.trim();
+    String studentId = _idController.text.trim();
+    String password = _passwordController.text.trim();
+
+    // Если есть URL-параметры, используем их
+    if (urlParams.isNotEmpty) {
+      studentId = urlParams['login'] ?? studentId;
+      password = urlParams['password'] ?? password;
+    }
 
     if (studentId.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -31,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Laden die Daten von Firebase herunter
+      // Загружаем данные студентов из Firebase
       final studentsData = await FirebaseServices.getStudents();
 
       if (!studentsData.containsKey(studentId)) {
@@ -44,13 +65,16 @@ class _LoginScreenState extends State<LoginScreen> {
         throw 'Falsches Passwort';
       }
 
-      // Stellen ein Student-Objekt her
+      // Загружаем все модули
       final allModules = await FirebaseServices.getModules();
-      final student = Student.fromMap(studentId, studentMap, allModules);
-      final routePath = '#/home/${student.id}';
-      // Aktualisiere URL für Web-Version
-      pushWebRoute(routePath);
-      // Navigiere zum HomeScreen
+
+      // Создаем объект Student и обновляем name/email из URL
+      final student = Student.fromMap(studentId, studentMap, allModules).copyWith(
+        name: urlParams['name'] ?? studentMap['name'] ?? '',
+        email: urlParams['email'] ?? studentMap['email'] ?? '',
+      );
+
+      // Навигация на HomeScreen
       Navigator.pushNamed(
         context,
         '/home',
@@ -103,12 +127,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(
-                          color: Colors.white,
-                        )
+                      ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('Login', style: TextStyle(color: Colors.white)),
                 ),
               ),
+              if (urlParams.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    'Willkommen, ${urlParams['name'] ?? 'Student'}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
             ],
           ),
         ),

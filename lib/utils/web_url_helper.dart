@@ -8,3 +8,13 @@ void pushWebRoute(String studentId) {
     html.window.history.pushState(null, '', '#/home/$studentId');
   }
 }
+
+// URL-Parameter abrufen
+Map<String, String> getUrlParameters() {
+  final params = <String, String>{};
+  final uri = Uri.parse(html.window.location.href);
+  uri.queryParameters.forEach((key, value) {
+    params[key] = value;
+  });
+  return params;
+}

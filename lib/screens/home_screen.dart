@@ -32,7 +32,6 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Загружаем актуальные данные модулей из Firebase
       final modulesData = await FirebaseServices.getModules();
 
       final List<Semester> semesters = [];
@@ -53,15 +52,18 @@ class _HomeScreenState extends State<HomeScreen> {
             if (m is Map) {
               final module = Module.fromMap(Map<String, dynamic>.from(m));
 
-              // --- проверяем, выбрал ли студент этот модуль ---
-              final originalSemester = widget.student.semesters
-                  .firstWhere((s) => s.name == semKey, orElse: () => Semester(name: semKey, openDate: open ?? DateTime.now(), closeDate: close ?? DateTime.now(), modules: []));
+              final originalSemester = widget.student.semesters.firstWhere(
+                  (s) => s.name == semKey,
+                  orElse: () => Semester(
+                      name: semKey,
+                      openDate: open ?? DateTime.now(),
+                      closeDate: close ?? DateTime.now(),
+                      modules: []));
               final isSelected = originalSemester.modules
                   .any((mod) => mod.name == module.name && mod.isSelected);
 
               module.isSelected = isSelected;
 
-              // --- если выбран, увеличиваем participants на 1 ---
               if (isSelected) {
                 module.participants = (module.participants ?? 0) + 1;
               }
@@ -79,17 +81,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ));
       });
 
-      _studentCopy = Student(
-        id: widget.student.id,
-        name: widget.student.name,
-        surname: widget.student.surname,
-        course: widget.student.course,
+      // создаём локальную копию студента с актуальными данными и email/name
+      _studentCopy = widget.student.copyWith(
         semesters: semesters,
-        password: widget.student.password,
+        name: widget.student.name,
+        email: widget.student.email,
       );
     } catch (e) {
-      print('Ein Fehler beim Laden der Studiendaten: $e');
-      _studentCopy = widget.student; // fallback
+      print('Fehler beim Laden der Studiendaten: $e');
+      _studentCopy = widget.student;
     }
 
     setState(() => _isLoading = false);
@@ -101,7 +101,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final originalSemester = widget.student.semesters[i];
 
       for (var j = 0; j < semester.modules.length; j++) {
-        if (semester.modules[j].isSelected != originalSemester.modules[j].isSelected) {
+        if (semester.modules[j].isSelected !=
+            originalSemester.modules[j].isSelected) {
           return true;
         }
       }
@@ -110,15 +111,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onModuleChanged(Module module) {
-    setState(() {
-      // module.isSelected уже обновлён в SemesterCard
-    });
+    setState(() {});
   }
 
   Future<void> _onSavePressed() async {
     setState(() => _isLoading = true);
     try {
-      // Сохраняем выбранные модули
       final Map<String, List<String>> selectedMap = {};
       for (var semester in _studentCopy.semesters) {
         selectedMap[semester.name] =
@@ -132,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Auswahl gespeichert!')));
     } catch (e) {
-      print('Ein Fehler beim Speichern: $e');
+      print('Fehler beim Speichern: $e');
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Fehler beim Speichern')));
     } finally {
@@ -146,7 +144,10 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.backgroundMain(context),
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: Text('Backstage DHGE', style: TextStyle(color: AppColors.textPrimary(context))),
+        title: Text(
+          'Backstage DHGE',
+          style: TextStyle(color: AppColors.textPrimary(context)),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -158,7 +159,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Student Info
                   Card(
                     color: AppColors.card(context),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     elevation: 3,
                     margin: const EdgeInsets.only(bottom: 16),
                     child: Padding(
@@ -166,11 +168,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text('Schülerinformationen', style: AppTextStyles.subheading(context)),
+                          Text('Schülerinformationen',
+                              style: AppTextStyles.subheading(context)),
                           const SizedBox(height: 8),
-                          Text('Vorname: ${_studentCopy.name}', style: AppTextStyles.body(context)),
-                          Text('Nachname: ${_studentCopy.surname}', style: AppTextStyles.body(context)),
-                          Text('Kurs: ${_studentCopy.course.toUpperCase()}', style: AppTextStyles.body(context)),
+                          Text('Vorname: ${_studentCopy.name}',
+                              style: AppTextStyles.body(context)),
+                          Text('Nachname: ${_studentCopy.surname}',
+                              style: AppTextStyles.body(context)),
+                          Text('Email: ${_studentCopy.email}',
+                              style: AppTextStyles.body(context)),
+                          Text('Kurs: ${_studentCopy.course.toUpperCase()}',
+                              style: AppTextStyles.body(context)),
                         ],
                       ),
                     ),
@@ -179,7 +187,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Save Button
                   Card(
                     color: AppColors.card(context),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     elevation: 2,
                     margin: const EdgeInsets.only(bottom: 16),
                     child: Padding(
@@ -194,7 +203,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           onPressed: isModified ? _onSavePressed : null,
-                          child: const Text('Speichern', style: TextStyle(color: Colors.white)),
+                          child: const Text('Speichern',
+                              style: TextStyle(color: Colors.white)),
                         ),
                       ),
                     ),
