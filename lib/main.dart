@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'firebase/firebase_services.dart';
+import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'constants/app_styles.dart';
 import 'constants/app_colors.dart';
 import 'models/student.dart';
 
@@ -22,8 +21,8 @@ class ChooseModuleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Backstage DHGE - Choose Module App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,
         primaryColor: AppColors.primary,
@@ -32,56 +31,48 @@ class ChooseModuleApp extends StatelessWidget {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
         ),
-        cardTheme: CardThemeData(
+        cardTheme: const CardThemeData(
           color: Colors.white,
-          elevation: 4,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: AppColors.secondary,
         ),
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(fontSize: 16),
-          titleMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        dividerColor: Colors.transparent,
       ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
+      darkTheme: ThemeData.dark().copyWith(
         primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: Colors.black,
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textPrimary(context),
-        ),
-        cardTheme: CardThemeData(
-          color: Colors.grey[900],
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          foregroundColor: Colors.white,
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: AppColors.secondary,
         ),
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(fontSize: 16),
-          titleMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        dividerColor: Colors.transparent,
       ),
       themeMode: ThemeMode.system,
-      home: const LoginScreen(),
-      routes: {
-        '/home': (context) {
-          final args =
-              ModalRoute.of(context)!.settings.arguments as Map<String, Student>;
-          return HomeScreen(
-            student: args['student']!,
-          );
-        },
+      initialRoute: '/',
+      onGenerateRoute: (settings) {
+        final uri = Uri.parse(settings.name ?? '');
+
+        // --- стартовая страница (логин) ---
+        if (uri.path == '/' || uri.path.isEmpty) {
+          return MaterialPageRoute(builder: (_) => const LoginScreen());
+        }
+
+        // --- маршрут вида /home/<studentId> ---
+        if (uri.path == '/home') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          final student = args?['student'] as Student?;
+          if (student != null) {
+            return MaterialPageRoute(
+              builder: (_) => HomeScreen(student: student),
+            );
+          }
+        }
+        // --- fallback ---
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
       },
     );
   }
