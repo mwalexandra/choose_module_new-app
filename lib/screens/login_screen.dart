@@ -22,13 +22,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Получаем параметры из URL (только веб)
+    // URL-Parameter abrufen (nur Web)
     urlParams = getUrlParameters();
 
-    // Если есть URL-параметры, заполняем поля
+    // Falls URL-Parameter vorhanden, Felder ausfüllen
     if (urlParams.isNotEmpty) {
       _idController.text = urlParams['login'] ?? '';
-      _passwordController.text = ''; // пароль можно оставить пустым
+      _passwordController.text = ''; // Passwort kann leer bleiben
     }
   }
 
@@ -36,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
     String studentId = _idController.text.trim();
     String password = _passwordController.text.trim();
 
-    // Если есть URL-параметры, используем их
+    // Falls URL-Parameter vorhanden, verwenden wir diese
     if (urlParams.isNotEmpty) {
       studentId = urlParams['login'] ?? studentId;
       password = urlParams['password'] ?? password;
@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Загружаем данные студентов из Firebase
+      // Studenten-Daten aus Firebase laden
       final studentsData = await FirebaseServices.getStudents();
 
       if (!studentsData.containsKey(studentId)) {
@@ -65,16 +65,16 @@ class _LoginScreenState extends State<LoginScreen> {
         throw 'Falsches Passwort';
       }
 
-      // Загружаем все модули
+      // Alle Module laden
       final allModules = await FirebaseServices.getModules();
 
-      // Создаем объект Student и обновляем name/email из URL
+      // Student-Objekt erstellen und name/email aus URL aktualisieren
       final student = Student.fromMap(studentId, studentMap, allModules).copyWith(
         name: urlParams['name'] ?? studentMap['name'] ?? '',
         email: urlParams['email'] ?? studentMap['email'] ?? '',
       );
 
-      // Навигация на HomeScreen
+      // Navigation zum HomeScreen
       Navigator.pushNamed(
         context,
         '/home',

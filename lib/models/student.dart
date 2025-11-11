@@ -1,5 +1,4 @@
 import 'semester.dart';
-import 'module.dart';
 
 class Student {
   final String id;
@@ -36,7 +35,7 @@ class Student {
       if (semesterDataRaw is Map) {
         final semester = Semester.fromMap(
             semesterKey, Map<String, dynamic>.from(semesterDataRaw));
-        // Отмечаем выбранные модули
+  // Markieren der ausgewählten Module
         final selectedList = selectedModulesRaw[semesterKey] ?? [];
         for (var module in semester.modules) {
           if (selectedList.contains(module.name)) {

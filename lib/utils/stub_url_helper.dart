@@ -1,5 +1,5 @@
 void pushWebRoute(String path) {
-  // ничего не делаем на нативных платформах
+  // Nichts auf nativen Plattformen tun
 }
 
 Map<String, String> getUrlParameters() {

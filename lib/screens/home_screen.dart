@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Student _studentCopy; // локальная копия студента
+  late Student _studentCopy; // lokale Kopie des Studierenden
   static const int maxModulesPerSemester = 2;
   bool _isLoading = true;
 
@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
               module.isSelected = isSelected;
 
               if (isSelected) {
-                module.participants = (module.participants ?? 0) + 1;
+                module.participants = (module.participants) + 1;
               }
 
               modulesList.add(module);
@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ));
       });
 
-      // создаём локальную копию студента с актуальными данными и email/name
+      // Erstellen einer lokalen Kopie des Studierenden mit aktuellen Daten und E-Mail/Name
       _studentCopy = widget.student.copyWith(
         semesters: semesters,
         name: widget.student.name,

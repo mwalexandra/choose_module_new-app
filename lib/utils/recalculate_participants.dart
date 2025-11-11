@@ -2,11 +2,11 @@ import 'package:firebase_database/firebase_database.dart';
 
 final DatabaseReference database = FirebaseDatabase.instance.ref();
 
-/// Пересчёт участников для всех модулей по структуре:
+/// Neuberechnung der Teilnehmeranzahl für alle Module anhand der Struktur:
 /// modules -> <courseId> -> { ..., semesters: { <semesterKey>: { modules: [ {id,name,participants,...}, ... ] } } }
 Future<void> recalcParticipants() async {
   try {
-    // --- 1) Считаем выборы студентов: course -> semester -> moduleName -> count
+  // --- 1) Zählen der Modulwahlen der Studierenden: course -> semester -> moduleName -> count
     final studentsSnapshot = await database.child('students').get();
     if (!studentsSnapshot.exists || studentsSnapshot.value == null) return;
 
@@ -45,14 +45,14 @@ Future<void> recalcParticipants() async {
       });
     }
 
-    // --- 2) Обход всех курсов/семестров в modules и обновление participants
+  // --- 2) Durchlauf aller Kurse/Semester in modules und Aktualisierung der participants
     final modulesSnapshot = await database.child('modules').get();
     if (!modulesSnapshot.exists || modulesSnapshot.value == null) return;
 
     final modulesRaw = modulesSnapshot.value;
     if (modulesRaw is! Map) return;
 
-    // Для каждого courseId обновим его semesters -> modules
+  // Für jede courseId aktualisieren wir deren semesters -> modules
     for (final courseEntry in (modulesRaw as Map).entries) {
       final courseId = courseEntry.key.toString();
       final courseDataRaw = courseEntry.value;
@@ -62,7 +62,7 @@ Future<void> recalcParticipants() async {
       final semestersRaw = courseData['semesters'];
       if (semestersRaw == null || semestersRaw is! Map) continue;
 
-      // Обновлённая структура семестров (либо перезапишем модули по-отдельности)
+  // Aktualisierte Struktur der Semester (oder wir schreiben Module einzeln zurück)
       for (final semesterEntry in (semestersRaw as Map).entries) {
         final semesterKey = semesterEntry.key.toString();
         final semesterDataRaw = semesterEntry.value;
@@ -79,7 +79,7 @@ Future<void> recalcParticipants() async {
             }
           }
         } else if (modulesListRaw is Map) {
-          // на всякий случай, если модули хранятся в виде Map<index, {...}>
+          // Für den Fall, dass Module als Map<index, {...}> gespeichert sind
           for (final mEntry in modulesListRaw.entries) {
             if (mEntry.value is Map) {
               modulesList.add(Map<String, dynamic>.from((mEntry.value as Map).cast()));
@@ -87,7 +87,7 @@ Future<void> recalcParticipants() async {
           }
         }
 
-        // Для каждого модуля ставим participants = counts[courseId]?[semesterKey]?[moduleName] ?? 0
+        // Für jedes Modul setzen wir participants = counts[courseId]?[semesterKey]?[moduleName] ?? 0
         for (final module in modulesList) {
           final name = (module['name'] ?? '').toString();
           final newCount = counts[courseId] != null &&
@@ -98,7 +98,7 @@ Future<void> recalcParticipants() async {
           module['participants'] = newCount;
         }
 
-        // Сохраняем список модулей для этого семестра обратно в БД
+    // Speichern der Modulliste dieses Semesters zurück in die DB
         await database
             .child('modules/$courseId/semesters/$semesterKey/modules')
             .set(modulesList);

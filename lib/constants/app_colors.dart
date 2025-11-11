@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Основные цвета
+    // Hauptfarben
   static const primary = Color.fromRGBO(85, 171, 38, 0.8);
   static const secondary = Color.fromRGBO(161, 16, 114, 1);
   static const success = Color.fromRGBO(5, 92, 43, 0.941);
@@ -9,7 +9,7 @@ class AppColors {
   static const warning = Color.fromRGBO(173, 27, 11, 1);
   static const white = Color.fromRGBO(255, 255, 255, 1);
 
-  // Светлая тема
+    // Helles Thema
   static const _lightBackgroundMain = Color.fromRGBO(255, 255, 255, 1);
   static const _lightBackgroundSubtle = Color.fromRGBO(246, 246, 246, 1);
   static const _lightCard = Color.fromRGBO(255, 255, 255, 1);
@@ -19,7 +19,7 @@ class AppColors {
   static const _lightBorderLight = Color.fromRGBO(224, 224, 223, 1);
   static const _lightBorderStrong = Color.fromRGBO(24, 70, 55, 1);
 
-  // Тёмная тема
+    // Dunkles Thema
   static const _darkBackgroundMain = Color.fromRGBO(18, 18, 18, 1);
   static const _darkBackgroundSubtle = Color.fromRGBO(31, 45, 38, 1);
   static const _darkCard = Color.fromRGBO(31, 45, 38, 1);
@@ -29,7 +29,7 @@ class AppColors {
   static const _darkBorderLight = Color.fromRGBO(58, 58, 58, 1);
   static const _darkBorderStrong = Color.fromRGBO(84, 171, 38, 1);
 
-  // Получение цвета в зависимости от темы
+    // Farbabruf abhängig vom Theme
   static Color backgroundMain(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
           ? _darkBackgroundMain
@@ -75,13 +75,13 @@ class AppColors {
 
   static Color sectionHeaderInactive(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? Color.fromRGBO(255, 255, 255, 0.00) // лёгкая подсветка в dark
+    ? Color.fromRGBO(255, 255, 255, 0.00) // leichte Hervorhebung im Dark-Mode
         : Color.fromRGBO(0, 0, 0, 0.00); // лёгкая подсветка в light
   }
 
   static Color sectionHeaderActive(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? Color.fromRGBO(255, 255, 255, 0.00) // более заметная подсветка в dark
+    ? Color.fromRGBO(255, 255, 255, 0.00) // deutlicher sichtbare Hervorhebung im Dark-Mode
         : Color.fromRGBO(0, 0, 0, 0.00); // более заметная подсветка в light
   }
 }
