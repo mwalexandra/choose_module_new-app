@@ -1,36 +1,23 @@
-# choose_module_app
+# Modul-Choose-App
 
-A new Flutter project.
+**Gruppenname:** makeewa  
+**Build-Ziel:** Web  
+**Base-Href:** /makeewa/
 
-## Getting Started
+## Beschreibung
+Dieses Projekt ist eine Flutter-Webanwendung, die eine Modulauswahl für Studierende ermöglicht.  
+Benutzer können sich über einen personalisierten Link anmelden, der ihre Daten über URL-Parameter enthält.
 
-This project is a starting point for a Flutter application.
+## Testanleitung (lokal)
+1. Öffne im Terminal:
+   ```bash
+   cd build/web
+   python -m http.server 8000
 
-A few resources to get you started if this is your first Flutter project:
+2. Öffne im Browser:
+    http://localhost:8000/index.html?login=stu1&password=1234&name=Alexandra&email=alex@example.com
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-# Pakete installieren
-.\dev.ps1 pubget
-
-# Projekt bereinigen
-.\dev.ps1 clean
-
-# Flutter-Web in Chrome starten
-.\dev.ps1 chrome
-
-# Flutter-App auf Emulator Pixel_4 starten
-.\dev.ps1 android
-
-# APK für Release bauen
-.\dev.ps1 build-apk
-
-# Web-Version bauen
-.\dev.ps1 build-web
-
-
+    oder auf dem Server unter /makeewa/:
+        https://<serveradresse>/makeewa/index.html?login=stu1&password=1234&name=Alexandra&email=alex@example.com
+        
+    
