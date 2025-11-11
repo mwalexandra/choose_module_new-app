@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class AppTextStyles {
-  // Заголовок
+  // Überschrift
   static TextStyle heading(BuildContext context) => TextStyle(
         fontFamily: 'Roboto',
         fontSize: 24,
@@ -10,7 +10,7 @@ class AppTextStyles {
         color: AppColors.textPrimary(context),
       );
 
-  // Подзаголовок
+  // Unterüberschrift
   static TextStyle subheading(BuildContext context) => TextStyle(
         fontFamily: 'Roboto Condensed',
         fontSize: 20,
@@ -18,7 +18,7 @@ class AppTextStyles {
         color: AppColors.textPrimary(context),
       );
 
-  // Основной текст
+  // Haupttext
   static TextStyle body(BuildContext context) => TextStyle(
         fontFamily: 'Roboto',
         fontSize: 16,
@@ -26,7 +26,7 @@ class AppTextStyles {
         color: AppColors.textPrimary(context),
       );
 
-  // Текст на кнопках
+  // Text auf Schaltflächen
   static TextStyle button(BuildContext context) => TextStyle(
         fontFamily: 'Roboto Condensed',
         fontSize: 16,

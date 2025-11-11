@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 
 final DatabaseReference databaseReference = FirebaseDatabase.instance.ref();
 
@@ -13,7 +14,7 @@ class FirebaseServices {
         return _convertSnapshotToMap(snapshot.value);
       }
     } catch (e) {
-      print('Ошибка при getStudents: $e');
+      debugPrint('Fehler bei getStudents: $e');
     }
     return {};
   }
@@ -26,7 +27,7 @@ class FirebaseServices {
         return _convertSnapshotToMap(snapshot.value);
       }
     } catch (e) {
-      print('Ошибка при getStudentById($studentId): $e');
+      debugPrint('Fehler bei getStudentById($studentId): $e');
     }
     return null;
   }
@@ -39,7 +40,7 @@ class FirebaseServices {
         return _convertSnapshotToMap(snapshot.value);
       }
     } catch (e) {
-      print('Ошибка при getModules: $e');
+      debugPrint('Fehler bei getModules: $e');
     }
     return {};
   }
@@ -49,7 +50,7 @@ class FirebaseServices {
     try {
       await databaseReference.child('students/$studentId').set(data);
     } catch (e) {
-      print('Ошибка при addStudent: $e');
+      debugPrint('Fehler bei addStudent: $e');
     }
   }
 
@@ -58,7 +59,7 @@ class FirebaseServices {
     try {
       await databaseReference.child('students/$studentId').update(data);
     } catch (e) {
-      print('Ошибка при updateStudent: $e');
+      debugPrint('Fehler bei updateStudent: $e');
     }
   }
 
@@ -70,7 +71,7 @@ class FirebaseServices {
           .child('students/$studentId/selectedModules')
           .set(selectedModules);
     } catch (e) {
-      print('Ошибка при saveSelectedModules: $e');
+      debugPrint('Fehler bei saveSelectedModules: $e');
     }
   }
 
@@ -97,7 +98,7 @@ class FirebaseServices {
         }
       });
     } catch (e) {
-      print('Ошибка при updateModuleParticipants: $e');
+      debugPrint('Fehler bei updateModuleParticipants: $e');
     }
   }
 
@@ -106,7 +107,7 @@ class FirebaseServices {
     try {
       await databaseReference.child('students/$studentId').remove();
     } catch (e) {
-      print('Ошибка при deleteStudent: $e');
+      debugPrint('Fehler bei deleteStudent: $e');
     }
   }
 
@@ -195,11 +196,11 @@ class FirebaseServices {
     try {
       await databaseReference.child('modules').set(modules);
     } catch (e) {
-      print('Ошибка при updateModules: $e');
+      debugPrint('Fehler bei updateModules: $e');
     }
   }
 
-   /// Обновить количество участников модуля с изменением на delta (+1 или -1)
+  /// Aktualisiert die Teilnehmerzahl eines Moduls um delta (+1 oder -1)
   static Future<void> updateModuleParticipantsDelta(
       String courseId,
       String semester,
@@ -225,12 +226,12 @@ class FirebaseServices {
               ? module['maxParticipants']
               : int.tryParse(module['maxParticipants'].toString()) ?? 999;
 
-          // Вычисляем новое значение
+            // Berechne neue Teilnehmeranzahl
           int updated = current + delta;
           if (updated < 0) updated = 0;
           if (updated > max) updated = max;
 
-          // Обновляем только если действительно изменилось
+            // Nur aktualisieren, wenn sich der Wert wirklich geändert hat
           if (updated != current) {
             module['participants'] = updated;
             await ref.set(modulesList);
@@ -239,7 +240,7 @@ class FirebaseServices {
         }
       }
     } catch (e) {
-      print('Ошибка при updateModuleParticipantsDelta: $e');
+      debugPrint('Fehler bei updateModuleParticipantsDelta: $e');
     }
   }
 }

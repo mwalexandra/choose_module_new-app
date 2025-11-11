@@ -1,4 +1,5 @@
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 
 final DatabaseReference database = FirebaseDatabase.instance.ref();
 
@@ -50,10 +51,10 @@ Future<void> recalcParticipants() async {
     if (!modulesSnapshot.exists || modulesSnapshot.value == null) return;
 
     final modulesRaw = modulesSnapshot.value;
-    if (modulesRaw is! Map) return;
+      if (modulesRaw is! Map<String, dynamic>) return;
 
   // Für jede courseId aktualisieren wir deren semesters -> modules
-    for (final courseEntry in (modulesRaw as Map).entries) {
+      for (final courseEntry in modulesRaw.entries) {
       final courseId = courseEntry.key.toString();
       final courseDataRaw = courseEntry.value;
       if (courseDataRaw == null || courseDataRaw is! Map) continue;
@@ -63,7 +64,7 @@ Future<void> recalcParticipants() async {
       if (semestersRaw == null || semestersRaw is! Map) continue;
 
   // Aktualisierte Struktur der Semester (oder wir schreiben Module einzeln zurück)
-      for (final semesterEntry in (semestersRaw as Map).entries) {
+        for (final semesterEntry in semestersRaw.entries) {
         final semesterKey = semesterEntry.key.toString();
         final semesterDataRaw = semesterEntry.value;
         if (semesterDataRaw == null || semesterDataRaw is! Map) continue;
@@ -105,8 +106,8 @@ Future<void> recalcParticipants() async {
       }
     }
 
-    print('recalcParticipants: updated participants counts successfully');
+    debugPrint('recalcParticipants: Teilnehmerzahlen erfolgreich aktualisiert');
   } catch (e, st) {
-    print('Fehler beim recalcParticipants: $e\n$st');
+    debugPrint('Fehler beim recalcParticipants: $e\n$st');
   }
 }

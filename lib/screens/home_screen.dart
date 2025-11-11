@@ -88,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
         email: widget.student.email,
       );
     } catch (e) {
-      print('Fehler beim Laden der Studiendaten: $e');
+      debugPrint('Fehler beim Laden der Studiendaten: $e');
       _studentCopy = widget.student;
     }
 
@@ -127,12 +127,15 @@ class _HomeScreenState extends State<HomeScreen> {
       await recalcParticipants();
       await _loadStudentData();
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Auswahl gespeichert!')));
     } catch (e) {
-      print('Fehler beim Speichern: $e');
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Fehler beim Speichern')));
+      debugPrint('Fehler beim Speichern: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Fehler beim Speichern')));
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -217,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       maxModulesPerSemester: maxModulesPerSemester,
                       onModuleChanged: _onModuleChanged,
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),

@@ -75,15 +75,18 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       // Navigation zum HomeScreen
+      if (!mounted) return;
       Navigator.pushNamed(
         context,
         '/home',
         arguments: {'student': student},
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login fehlgeschlagen: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login fehlgeschlagen: $e')),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }

@@ -15,7 +15,7 @@ class Module {
     this.isSelected = false,
   });
 
-  // Создать из Map Firebase
+  // Aus Map von Firebase erstellen
   factory Module.fromMap(Map<String, dynamic> map) {
     return Module(
       id: map['id'] ?? '',
@@ -27,7 +27,7 @@ class Module {
     );
   }
 
-  // Преобразовать в Map для сохранения в Firebase
+  // In Map für Speicherung in Firebase umwandeln
   Map<String, dynamic> toMap() {
     return {
       'id': id,
