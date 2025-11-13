@@ -171,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text('Schülerinformationen',
+                          Text('Studentinformationen',
                               style: AppTextStyles.subheading(context)),
                           const SizedBox(height: 8),
                           Text('Vorname: ${_studentCopy.name}',
